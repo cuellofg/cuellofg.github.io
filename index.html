@@ -247,7 +247,7 @@ function svLocal(k){ if(k==='cfg') localStorage.setItem('grd_cfg', JSON.stringif
 async function apiGet(tipo){
   try{
     const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    const r = await fetch(url);
+    const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
     return await r.json();
   } catch(e){ console.error('Error GET:', e); return []; }
 }
@@ -255,14 +255,14 @@ async function apiGet(tipo){
 async function apiPost(data, tipo){
   try{
     const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data), signal: AbortSignal.timeout(30000) });
   } catch(e){ console.error('Error POST:', e); }
 }
 
 async function apiDelete(data, tipo){
   try{
     const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    await fetch(url, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+    await fetch(url, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data), signal: AbortSignal.timeout(30000) });
   } catch(e){ console.error('Error DELETE:', e); }
 }
 
