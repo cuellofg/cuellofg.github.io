@@ -51,41 +51,41 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
 <body>
 <div class="app">
 
-<!-- HOME -->
 <div id="sc-home" class="screen active">
   <div style="text-align:center;padding:2rem 0 1.5rem;">
     <div style="font-size:40px;margin-bottom:10px;">📋</div>
     <h2 style="font-size:22px;">Sistema de Guardias</h2>
     <p id="home-mes" style="font-size:13px;color:#64748b;margin-top:4px;"></p>
   </div>
-  <button class="btn btn-green" onclick="goTo('sc-login')">Registrar mi asistencia</button>
+  <button class="btn btn-green" onclick="iniciarLogin()">Registrar mi asistencia</button>
   <button class="btn btn-blue" onclick="goTo('sc-admin-login')">Panel de administrador</button>
 </div>
 
-<!-- LOGIN USUARIO -->
 <div id="sc-login" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2>Identificate</h2>
   <div class="card">
-    <label>Tu nombre</label>
-    <select id="sel-nombre"></select>
-    <label>Tu contraseña</label>
-    <input type="password" id="inp-pass" placeholder="Ingresá tu contraseña" autocomplete="off">
-    <div id="login-err" class="alert alert-err" style="display:none;"></div>
-    <button class="btn btn-green" onclick="doLogin()">Continuar</button>
+    <div id="login-loader" class="loader"><div class="spinner"></div><br>Cargando personal...</div>
+    <div id="login-form" style="display:none;">
+      <label>Tu nombre</label>
+      <select id="sel-nombre"></select>
+      <label>Tu contraseña</label>
+      <input type="password" id="inp-pass" placeholder="Ingresá tu contraseña" autocomplete="off">
+      <div id="login-err" class="alert alert-err" style="display:none;"></div>
+      <button class="btn btn-green" onclick="doLogin()">Continuar</button>
+    </div>
   </div>
 </div>
 
-<!-- REGISTRO -->
 <div id="sc-registro" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2 id="reg-title">Hola...</h2>
   <div class="card">
     <div id="reg-info" style="margin-bottom:.9rem;"></div>
-    <label style="margin-bottom:7px;">¿Qué tipo de asistencia registrás hoy?</label>
+    <label style="margin-bottom:7px;">Tipo de asistencia</label>
     <div class="tipo-grid" id="tipos-grid"></div>
     <div style="border-top:1px solid #f1f5f9;padding-top:.8rem;margin-top:.2rem;">
-      <label style="margin-bottom:6px;">O registrar un rango de días (ej: vacaciones)</label>
+      <label style="margin-bottom:6px;">O registrar un rango de días</label>
       <div class="grid2">
         <div><label>Desde día</label><input type="number" id="rango-desde" min="1" max="31" placeholder="1"></div>
         <div><label>Hasta día</label><input type="number" id="rango-hasta" min="1" max="31" placeholder="5"></div>
@@ -96,17 +96,15 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
   </div>
 </div>
 
-<!-- OK -->
 <div id="sc-ok" class="screen">
   <div style="text-align:center;padding:2.5rem 1rem;">
     <div style="font-size:48px;margin-bottom:.9rem;">✅</div>
-    <h2>¡Registrado!</h2>
+    <h2>Registrado!</h2>
     <div id="ok-info" style="font-size:14px;color:#64748b;margin:1rem 0 1.8rem;line-height:1.6;"></div>
     <button class="btn btn-green" onclick="goTo('sc-home')">Listo</button>
   </div>
 </div>
 
-<!-- ADMIN LOGIN -->
 <div id="sc-admin-login" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2>Acceso administrador</h2>
@@ -118,7 +116,6 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
   </div>
 </div>
 
-<!-- ADMIN PANEL -->
 <div id="sc-admin" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Salir</span>
   <h2>Panel de administrador</h2>
@@ -131,7 +128,7 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
   </div>
 
   <div id="tab-planilla">
-    <div style="overflow-x:auto;" id="planilla-container"></div>
+    <div style="overflow-x:auto;" id="planilla-container"><div class="loader"><div class="spinner"></div><br>Cargando...</div></div>
   </div>
 
   <div id="tab-personal" style="display:none;">
@@ -142,14 +139,14 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
         <div><label>L.P.</label><input type="text" id="inp-lp" placeholder="Ej: 12345"></div>
       </div>
       <label>Apellido y Nombre</label>
-      <input type="text" id="inp-nombre" placeholder="Ej: García, Juan">
+      <input type="text" id="inp-nombre" placeholder="Ej: Garcia, Juan">
       <label>Contraseña</label>
       <input type="text" id="inp-new-pass" placeholder="Ej: Garcia2025" autocomplete="off">
       <button class="btn btn-green" onclick="agregarPersona()">Agregar persona</button>
     </div>
     <div class="card">
       <h3>Personal registrado</h3>
-      <div id="lista-personal"></div>
+      <div id="lista-personal"><div class="loader"><div class="spinner"></div><br>Cargando...</div></div>
     </div>
   </div>
 
@@ -159,8 +156,8 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
       <label>Persona</label>
       <select id="rango-persona"></select>
       <div class="grid3">
-        <div><label>Desde día</label><input type="number" id="rango-admin-desde" min="1" max="31" placeholder="5"></div>
-        <div><label>Hasta día</label><input type="number" id="rango-admin-hasta" min="1" max="31" placeholder="15"></div>
+        <div><label>Desde</label><input type="number" id="rango-admin-desde" min="1" max="31" placeholder="5"></div>
+        <div><label>Hasta</label><input type="number" id="rango-admin-hasta" min="1" max="31" placeholder="15"></div>
         <div><label>Tipo</label><select id="rango-admin-tipo"></select></div>
       </div>
       <button class="btn btn-amber" onclick="aplicarRangoAdmin()">Aplicar rango</button>
@@ -169,7 +166,7 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
       <h3>Editar celda individual</h3>
       <div class="grid2">
         <div><label>Persona</label><select id="celda-persona"></select></div>
-        <div><label>Día</label><input type="number" id="celda-dia" min="1" max="31" placeholder="8"></div>
+        <div><label>Dia</label><input type="number" id="celda-dia" min="1" max="31" placeholder="8"></div>
       </div>
       <label>Valor</label>
       <select id="celda-tipo"></select>
@@ -183,16 +180,16 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
       <label>Nombre del mes</label>
       <input type="text" id="cfg-mes" placeholder="Ej: ABRIL 2026">
       <div class="grid2">
-        <div><label>Días del mes</label><input type="number" id="cfg-dias" min="28" max="31"></div>
-        <div><label>Día inicio semana (0=Dom,1=Lun)</label><input type="number" id="cfg-inicio" min="0" max="6"></div>
+        <div><label>Dias del mes</label><input type="number" id="cfg-dias" min="28" max="31"></div>
+        <div><label>Inicio semana (0=Dom,1=Lun)</label><input type="number" id="cfg-inicio" min="0" max="6"></div>
       </div>
       <button class="btn btn-blue" onclick="guardarConfigMes()">Guardar</button>
     </div>
     <div class="card">
       <h3>Tipos de asistencia</h3>
       <div class="grid3">
-        <div><label>Código</label><input type="text" id="cfg-tipo-cod" placeholder="LC" maxlength="5"></div>
-        <div><label>Descripción</label><input type="text" id="cfg-tipo-desc" placeholder="Licencia"></div>
+        <div><label>Codigo</label><input type="text" id="cfg-tipo-cod" placeholder="LC" maxlength="5"></div>
+        <div><label>Descripcion</label><input type="text" id="cfg-tipo-desc" placeholder="Licencia"></div>
         <div><label>Color</label>
           <select id="cfg-tipo-color">
             <option value="#10b981">Verde</option>
@@ -212,12 +209,12 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
 
   <div id="tab-export" style="display:none;">
     <div class="card">
-      <p style="font-size:14px;color:#64748b;margin-bottom:.9rem;">Descargá la planilla completa en CSV para abrir en Excel.</p>
-      <button class="btn btn-blue" onclick="exportarCSV()">Descargar CSV para Excel</button>
+      <p style="font-size:14px;color:#64748b;margin-bottom:.9rem;">Descarga la planilla en CSV para Excel.</p>
+      <button class="btn btn-blue" onclick="exportarCSV()">Descargar CSV</button>
     </div>
     <div class="card">
-      <p style="font-size:13px;color:#64748b;margin-bottom:.9rem;">Reiniciar registros del mes. El personal y configuración se mantienen.</p>
-      <button class="btn btn-red" onclick="reiniciarMes()">Reiniciar registros del mes</button>
+      <p style="font-size:13px;color:#64748b;margin-bottom:.9rem;">Reiniciar registros del mes.</p>
+      <button class="btn btn-red" onclick="reiniciarMes()">Reiniciar mes</button>
     </div>
   </div>
 </div>
@@ -233,49 +230,56 @@ let cfg = JSON.parse(localStorage.getItem('grd_cfg') || 'null') || {
   mes:'ABRIL 2026', dias:30, inicioSem:1,
   tipos:[
     {cod:'G',desc:'Guardia',color:'#10b981'},
-    {cod:'M/T',desc:'Mañana y Tarde',color:'#3b82f6'},
-    {cod:'M',desc:'Solo Mañana',color:'#f59e0b'},
+    {cod:'M/T',desc:'Manana y Tarde',color:'#3b82f6'},
+    {cod:'M',desc:'Solo Manana',color:'#f59e0b'},
     {cod:'T',desc:'Solo Tarde',color:'#8b5cf6'},
     {cod:'LC',desc:'Licencia',color:'#ef4444'},
     {cod:'VAC',desc:'Vacaciones',color:'#ec4899'},
   ]
 };
-let personal = JSON.parse(localStorage.getItem('grd_personal') || '[]');
+let personal = [];
 let registros = {};
 let usuarioActual = null;
 let tipoSel = null;
 
-function svLocal(k){
-  if(k==='cfg') localStorage.setItem('grd_cfg', JSON.stringify(cfg));
-  if(k==='personal') localStorage.setItem('grd_personal', JSON.stringify(personal));
+function svLocal(k){ if(k==='cfg') localStorage.setItem('grd_cfg', JSON.stringify(cfg)); }
+
+async function apiGet(tipo){
+  try{
+    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    const r = await fetch(url);
+    return await r.json();
+  } catch(e){ console.error('Error GET:', e); return []; }
 }
 
-async function apiGet(){
+async function apiPost(data, tipo){
   try{
-    const r = await fetch(API_URL);
-    const data = await r.json();
-    registros = {};
-    data.forEach(d => {
-      if(d.nombre && d.dia && d.tipo){
-        if(!registros[d.nombre]) registros[d.nombre]={};
-        registros[d.nombre][d.dia]=d.tipo;
-      }
-    });
-  } catch(e){ console.error('Error cargando datos:', e); }
+    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  } catch(e){ console.error('Error POST:', e); }
 }
 
-async function apiPost(nombre, dia, tipo){
+async function apiDelete(data, tipo){
   try{
-    await fetch(API_URL, {
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body: JSON.stringify({
-        id: nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,
-        nombre, dia, tipo,
-        mes: cfg.mes
-      })
-    });
-  } catch(e){ console.error('Error guardando:', e); }
+    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    await fetch(url, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
+  } catch(e){ console.error('Error DELETE:', e); }
+}
+
+async function cargarPersonal(){
+  const data = await apiGet('personal');
+  personal = data.filter(d => d.nombre);
+}
+
+async function cargarRegistros(){
+  const data = await apiGet();
+  registros = {};
+  data.forEach(d => {
+    if(d.nombre && d.dia && d.tipo){
+      if(!registros[d.nombre]) registros[d.nombre]={};
+      registros[d.nombre][d.dia]=d.tipo;
+    }
+  });
 }
 
 function goTo(id){
@@ -286,23 +290,33 @@ function goTo(id){
   document.getElementById('home-mes').textContent=cfg.mes;
 }
 
+async function iniciarLogin(){
+  goTo('sc-login');
+  document.getElementById('login-loader').style.display='block';
+  document.getElementById('login-form').style.display='none';
+  await cargarPersonal();
+  llenarNombresLogin();
+  document.getElementById('login-loader').style.display='none';
+  document.getElementById('login-form').style.display='block';
+}
+
 function llenarSel(id,arr,vFn,lFn,empty){
   const s=document.getElementById(id); if(!s) return;
-  s.innerHTML='<option value="">'+(empty||'— Seleccioná —')+'</option>';
+  s.innerHTML='<option value="">'+(empty||'Selecciona')+'</option>';
   arr.forEach((x,i)=>{const o=document.createElement('option');o.value=vFn(x,i);o.textContent=lFn(x,i);s.appendChild(o);});
 }
 function llenarPersonas(id){llenarSel(id,personal,p=>p.nombre,p=>p.nombre);}
-function llenarTipos(id){llenarSel(id,cfg.tipos,t=>t.cod,t=>t.cod+' – '+t.desc);}
-function llenarNombresLogin(){llenarSel('sel-nombre',personal,(_,i)=>i,p=>p.nombre,'— Tu nombre —');}
+function llenarTipos(id){llenarSel(id,cfg.tipos,t=>t.cod,t=>t.cod+' - '+t.desc);}
+function llenarNombresLogin(){llenarSel('sel-nombre',personal,(_,i)=>i,p=>p.nombre,'Tu nombre');}
 
 function doLogin(){
   const idx=document.getElementById('sel-nombre').value;
   const pass=document.getElementById('inp-pass').value;
   const err=document.getElementById('login-err');
-  if(idx===''){err.textContent='Seleccioná tu nombre.';err.style.display='block';return;}
-  if(!pass){err.textContent='Ingresá tu contraseña.';err.style.display='block';return;}
+  if(idx===''){err.textContent='Selecciona tu nombre.';err.style.display='block';return;}
+  if(!pass){err.textContent='Ingresa tu contrasena.';err.style.display='block';return;}
   const p=personal[idx];
-  if(p.pass!==pass){err.textContent='Contraseña incorrecta. Consultá al administrador.';err.style.display='block';return;}
+  if(p.pass!==pass){err.textContent='Contrasena incorrecta.';err.style.display='block';return;}
   err.style.display='none';
   document.getElementById('inp-pass').value='';
   usuarioActual={idx:parseInt(idx),...p};
@@ -310,8 +324,8 @@ function doLogin(){
   const yaReg=registros[p.nombre]&&registros[p.nombre][dia];
   document.getElementById('reg-title').textContent='Hola, '+p.nombre.split(',')[0];
   document.getElementById('reg-info').innerHTML=yaReg
-    ?'<div class="alert alert-ok">Ya registraste <strong>'+yaReg+'</strong> hoy — día '+dia+'.</div>'
-    :'<div style="font-size:13px;color:#64748b;">Hoy es el día <strong>'+dia+'</strong> de '+cfg.mes+'</div>';
+    ?'<div class="alert alert-ok">Ya registraste <strong>'+yaReg+'</strong> hoy dia '+dia+'.</div>'
+    :'<div style="font-size:13px;color:#64748b;">Hoy es el dia <strong>'+dia+'</strong> de '+cfg.mes+'</div>';
   renderTiposGrid();
   document.getElementById('rango-desde').value='';
   document.getElementById('rango-hasta').value='';
@@ -331,33 +345,33 @@ function renderTiposGrid(){
 
 async function doRegistro(){
   const err=document.getElementById('reg-err');
-  if(!tipoSel){err.textContent='Seleccioná el tipo de asistencia.';err.style.display='block';return;}
+  if(!tipoSel){err.textContent='Selecciona el tipo de asistencia.';err.style.display='block';return;}
   err.style.display='none';
   const hoy=new Date().getDate();
   const dv=parseInt(document.getElementById('rango-desde').value);
   const hv=parseInt(document.getElementById('rango-hasta').value);
   const desde=isNaN(dv)?hoy:dv;
   const hasta=isNaN(hv)?desde:hv;
-  if(desde>hasta){err.textContent='"Desde" no puede ser mayor que "hasta".';err.style.display='block';return;}
+  if(desde>hasta){err.textContent='Desde no puede ser mayor que hasta.';err.style.display='block';return;}
   for(let d=desde;d<=hasta;d++){
     if(!registros[usuarioActual.nombre]) registros[usuarioActual.nombre]={};
     registros[usuarioActual.nombre][d]=tipoSel;
-    await apiPost(usuarioActual.nombre, d, tipoSel);
+    await apiPost({ id: usuarioActual.nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d, nombre: usuarioActual.nombre, dia: d, tipo: tipoSel, mes: cfg.mes });
   }
-  const rango=desde===hasta?'Día '+desde:'Días '+desde+' al '+hasta;
-  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' → '+tipoSel+'<br><span style="font-size:12px;">'+cfg.mes+'</span>';
+  const rango=desde===hasta?'Dia '+desde:'Dias '+desde+' al '+hasta;
+  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' - '+tipoSel+'<br>'+cfg.mes;
   goTo('sc-ok');
 }
 
 async function doAdminLogin(){
   const pass=document.getElementById('inp-admin-pass').value;
   const err=document.getElementById('admin-err');
-  if(pass!==ADMIN_PASS){err.textContent='Contraseña incorrecta.';err.style.display='block';return;}
+  if(pass!==ADMIN_PASS){err.textContent='Contrasena incorrecta.';err.style.display='block';return;}
   err.style.display='none';
   document.getElementById('inp-admin-pass').value='';
-  document.getElementById('planilla-container').innerHTML='<div class="loader"><div class="spinner"></div><br>Cargando datos...</div>';
   goTo('sc-admin');
-  await apiGet();
+  await cargarPersonal();
+  await cargarRegistros();
   renderAll();
 }
 
@@ -377,7 +391,7 @@ function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConf
 
 function renderPlanilla(){
   const c=document.getElementById('planilla-container');
-  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem 0;">Sin personal registrado.</p>';return;}
+  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem 0;">Sin personal.</p>';return;}
   const inicio=parseInt(cfg.inicioSem)||0;
   let h='<table><thead><tr>';
   h+='<th class="col-fixed" style="min-width:70px;">Grado</th>';
@@ -410,60 +424,56 @@ function renderPlanilla(){
 }
 
 function renderPersonal(){
-  llenarNombresLogin();
   const c=document.getElementById('lista-personal');
   if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin personal.</p>';return;}
-  c.innerHTML=personal.map((p,i)=>`
-    <div class="row-between">
-      <div style="flex:1;min-width:0;">
-        <div style="font-size:13px;font-weight:600;">${p.nombre}</div>
-        <div style="font-size:11px;color:#64748b;">${p.grado} · L.P.: ${p.lp}</div>
-        <div style="font-size:11px;margin-top:2px;">Contraseña: <span class="pass-chip">${p.pass}</span></div>
-      </div>
-      <div style="display:flex;gap:10px;align-items:center;margin-left:8px;">
-        <span style="cursor:pointer;color:#3b82f6;font-size:12px;" onclick="editarPersona(${i})">Editar</span>
-        <span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarPersona(${i})">Quitar</span>
-      </div>
-    </div>`).join('');
+  c.innerHTML=personal.map((p,i)=>
+    '<div class="row-between">'+
+    '<div style="flex:1;min-width:0;">'+
+    '<div style="font-size:13px;font-weight:600;">'+p.nombre+'</div>'+
+    '<div style="font-size:11px;color:#64748b;">'+p.grado+' - L.P.: '+p.lp+'</div>'+
+    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip">'+p.pass+'</span></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px;align-items:center;margin-left:8px;">'+
+    '<span style="cursor:pointer;color:#3b82f6;font-size:12px;" onclick="editarPersona('+i+')">Editar</span>'+
+    '<span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarPersona('+i+')">Quitar</span>'+
+    '</div></div>'
+  ).join('');
 }
 
-function agregarPersona(){
+async function agregarPersona(){
   const grado=document.getElementById('inp-grado').value.trim();
   const lp=document.getElementById('inp-lp').value.trim();
   const nombre=document.getElementById('inp-nombre').value.trim();
   const pass=document.getElementById('inp-new-pass').value.trim();
-  if(!grado||!lp||!nombre||!pass){alert('Completá todos los campos.');return;}
-  if(personal.find(p=>p.nombre===nombre)){alert('Ya existe una persona con ese nombre.');return;}
-  personal.push({grado,lp,nombre,pass});
-  svLocal('personal');
-  ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(id=>document.getElementById(id).value='');
-  renderPersonal();
-  renderPlanilla();
+  if(!grado||!lp||!nombre||!pass){alert('Completa todos los campos.');return;}
+  if(personal.find(p=>p.nombre===nombre)){alert('Ya existe esa persona.');return;}
+  const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
+  await apiPost({id, grado, lp, nombre, pass}, 'personal');
+  personal.push({id, grado, lp, nombre, pass});
+  ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(i=>document.getElementById(i).value='');
+  renderPersonal(); renderPlanilla(); llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
 }
 
-function editarPersona(i){
+async function editarPersona(i){
   const p=personal[i];
-  const nuevoPass=prompt('Nueva contraseña para '+p.nombre+'\n(Actual: '+p.pass+')','');
+  const nuevoPass=prompt('Nueva contrasena para '+p.nombre+' (Actual: '+p.pass+')','');
   if(nuevoPass===null) return;
-  if(!nuevoPass.trim()){alert('La contraseña no puede estar vacía.');return;}
+  if(!nuevoPass.trim()){alert('No puede estar vacia.');return;}
   personal[i].pass=nuevoPass.trim();
-  svLocal('personal');
+  await apiPost({...personal[i]}, 'personal');
   renderPersonal();
 }
 
-function eliminarPersona(i){
-  if(!confirm('¿Quitar a '+personal[i].nombre+'?')) return;
+async function eliminarPersona(i){
+  if(!confirm('Quitar a '+personal[i].nombre+'?')) return;
+  await apiDelete({id: personal[i].id}, 'personal');
   personal.splice(i,1);
-  svLocal('personal');
-  renderPersonal();
-  renderPlanilla();
+  renderPersonal(); renderPlanilla();
 }
 
 function renderRangos(){
-  llenarPersonas('rango-persona');
-  llenarPersonas('celda-persona');
-  llenarTipos('rango-admin-tipo');
-  llenarTipos('celda-tipo');
+  llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
+  llenarTipos('rango-admin-tipo'); llenarTipos('celda-tipo');
 }
 
 async function aplicarRangoAdmin(){
@@ -471,14 +481,14 @@ async function aplicarRangoAdmin(){
   const desde=parseInt(document.getElementById('rango-admin-desde').value);
   const hasta=parseInt(document.getElementById('rango-admin-hasta').value);
   const tipo=document.getElementById('rango-admin-tipo').value;
-  if(!persona||!tipo||isNaN(desde)||isNaN(hasta)){alert('Completá todos los campos.');return;}
-  if(desde>hasta){alert('"Desde" no puede ser mayor que "hasta".');return;}
+  if(!persona||!tipo||isNaN(desde)||isNaN(hasta)){alert('Completa todos los campos.');return;}
+  if(desde>hasta){alert('Desde no puede ser mayor que hasta.');return;}
   for(let d=desde;d<=hasta;d++){
     if(!registros[persona]) registros[persona]={};
     registros[persona][d]=tipo;
-    await apiPost(persona, d, tipo);
+    await apiPost({ id: persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d, nombre: persona, dia: d, tipo, mes: cfg.mes });
   }
-  alert('✓ Aplicado: '+persona+', días '+desde+' al '+hasta+' → '+tipo);
+  alert('Aplicado: '+persona+', dias '+desde+' al '+hasta+' - '+tipo);
   renderPlanilla();
 }
 
@@ -486,11 +496,11 @@ async function editarCelda(){
   const persona=document.getElementById('celda-persona').value;
   const dia=parseInt(document.getElementById('celda-dia').value);
   const tipo=document.getElementById('celda-tipo').value;
-  if(!persona||isNaN(dia)||!tipo){alert('Completá todos los campos.');return;}
+  if(!persona||isNaN(dia)||!tipo){alert('Completa todos los campos.');return;}
   if(!registros[persona]) registros[persona]={};
   registros[persona][dia]=tipo;
-  await apiPost(persona, dia, tipo);
-  alert('✓ Celda actualizada.');
+  await apiPost({ id: persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia, nombre: persona, dia, tipo, mes: cfg.mes });
+  alert('Celda actualizada.');
   renderPlanilla();
 }
 
@@ -499,40 +509,36 @@ function renderConfig(){
   document.getElementById('cfg-dias').value=cfg.dias;
   document.getElementById('cfg-inicio').value=cfg.inicioSem||0;
   const lt=document.getElementById('lista-tipos');
-  lt.innerHTML=cfg.tipos.map((t,i)=>`
-    <div class="row-between">
-      <span style="font-size:13px;"><span class="dot" style="background:${t.color};"></span><strong>${t.cod}</strong> – ${t.desc}</span>
-      <span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarTipo(${i})">Quitar</span>
-    </div>`).join('');
+  lt.innerHTML=cfg.tipos.map((t,i)=>
+    '<div class="row-between">'+
+    '<span style="font-size:13px;"><span class="dot" style="background:'+t.color+';"></span><strong>'+t.cod+'</strong> - '+t.desc+'</span>'+
+    '<span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarTipo('+i+')">Quitar</span>'+
+    '</div>'
+  ).join('');
 }
 
 function guardarConfigMes(){
   cfg.mes=document.getElementById('cfg-mes').value.trim()||cfg.mes;
   cfg.dias=parseInt(document.getElementById('cfg-dias').value)||30;
   cfg.inicioSem=parseInt(document.getElementById('cfg-inicio').value)||0;
-  svLocal('cfg');
-  alert('Configuración guardada.');
-  renderPlanilla();
+  svLocal('cfg'); alert('Configuracion guardada.'); renderPlanilla();
 }
 
 function agregarTipo(){
   const cod=document.getElementById('cfg-tipo-cod').value.trim().toUpperCase();
   const desc=document.getElementById('cfg-tipo-desc').value.trim();
   const color=document.getElementById('cfg-tipo-color').value;
-  if(!cod||!desc){alert('Completá código y descripción.');return;}
-  if(cfg.tipos.find(t=>t.cod===cod)){alert('Ese código ya existe.');return;}
-  cfg.tipos.push({cod,desc,color});
-  svLocal('cfg');
+  if(!cod||!desc){alert('Completa codigo y descripcion.');return;}
+  if(cfg.tipos.find(t=>t.cod===cod)){alert('Ese codigo ya existe.');return;}
+  cfg.tipos.push({cod,desc,color}); svLocal('cfg');
   document.getElementById('cfg-tipo-cod').value='';
   document.getElementById('cfg-tipo-desc').value='';
   renderConfig();
 }
 
 function eliminarTipo(i){
-  if(!confirm('¿Quitar el tipo "'+cfg.tipos[i].cod+'"?')) return;
-  cfg.tipos.splice(i,1);
-  svLocal('cfg');
-  renderConfig();
+  if(!confirm('Quitar el tipo "'+cfg.tipos[i].cod+'"?')) return;
+  cfg.tipos.splice(i,1); svLocal('cfg'); renderConfig();
 }
 
 function exportarCSV(){
@@ -552,9 +558,9 @@ function exportarCSV(){
 }
 
 async function reiniciarMes(){
-  if(!confirm('¿Reiniciar todos los registros del mes?')) return;
+  if(!confirm('Reiniciar todos los registros del mes?')) return;
   registros={};
-  alert('Registros reiniciados localmente. Los datos en Azure se mantienen hasta que se sobreescriban.');
+  alert('Reiniciado. Para limpiar Azure entra al Data Explorer de Cosmos DB.');
   renderPlanilla();
 }
 
