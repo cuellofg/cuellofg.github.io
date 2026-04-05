@@ -372,6 +372,17 @@ async function doAdminLogin(){
   goTo('sc-admin');
   await cargarPersonal();
   await cargarRegistros();
+  // Verificar si cambio el mes
+  const mesActual = new Date().toLocaleString('es-AR', {month:'long', year:'numeric'}).toUpperCase();
+  const mesCfg = cfg.mes.toUpperCase();
+  if(!mesCfg.includes(new Date().toLocaleString('es-AR', {month:'long'}).toUpperCase())){
+    setTimeout(()=>{
+      if(confirm('Atencion: El mes configurado es "'+cfg.mes+'" pero estamos en '+mesActual+'. Queres actualizar el mes?')){
+        goTo('sc-admin');
+        switchTab('tab-config', document.querySelector('.tab'));
+      }
+    }, 500);
+  }
   renderAll();
 }
 
@@ -558,9 +569,23 @@ function exportarCSV(){
 }
 
 async function reiniciarMes(){
-  if(!confirm('Reiniciar todos los registros del mes?')) return;
-  registros={};
-  alert('Reiniciado. Para limpiar Azure entra al Data Explorer de Cosmos DB.');
+  if(!confirm('Reiniciar todos los registros del mes? Los datos se archivaran antes de borrarse.')) return;
+  
+  // Archivar mes actual
+  const mesArchivo = {
+    id: cfg.mes.replace(/ /g,'_')+'_'+Date.now(),
+    mes: cfg.mes,
+    fecha: new Date().toISOString(),
+    registros: registros,
+    personal: personal.map(p=>({nombre:p.nombre, grado:p.grado, lp:p.lp}))
+  };
+  await apiPost(mesArchivo, 'archivo');
+  
+  // Limpiar registros en Azure
+  await apiPost({}, 'limpiar');
+  
+  registros = {};
+  alert('Mes archivado y reiniciado correctamente.');
   renderPlanilla();
 }
 
