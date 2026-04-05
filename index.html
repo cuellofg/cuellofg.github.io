@@ -269,6 +269,7 @@ async function apiDelete(data, tipo){
 async function cargarPersonal(){
   const data = await apiGet('personal');
   personal = data.filter(d => d.nombre);
+  personal.sort((a,b) => (a.orden||0) - (b.orden||0));
 }
 
 async function cargarRegistros(){
@@ -461,8 +462,9 @@ async function agregarPersona(){
   if(!grado||!lp||!nombre||!pass){alert('Completa todos los campos.');return;}
   if(personal.find(p=>p.nombre===nombre)){alert('Ya existe esa persona.');return;}
   const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
-  await apiPost({id, grado, lp, nombre, pass}, 'personal');
-  personal.push({id, grado, lp, nombre, pass});
+  const orden=personal.length;
+  await apiPost({id, grado, lp, nombre, pass, orden}, 'personal');
+  personal.push({id, grado, lp, nombre, pass, orden});
   ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(i=>document.getElementById(i).value='');
   renderPersonal(); renderPlanilla(); llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
 }
