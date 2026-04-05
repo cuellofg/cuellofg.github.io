@@ -246,7 +246,7 @@ function svLocal(k){ if(k==='cfg') localStorage.setItem('grd_cfg', JSON.stringif
 
 async function apiGet(tipo){
   try{
-    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
     const r = await fetch(url);
     return await r.json();
   } catch(e){ console.error('Error GET:', e); return []; }
@@ -254,14 +254,14 @@ async function apiGet(tipo){
 
 async function apiPost(data, tipo){
   try{
-    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
     await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
   } catch(e){ console.error('Error POST:', e); }
 }
 
 async function apiDelete(data, tipo){
   try{
-    const url = tipo ? API_URL+'&tipo='+tipo : API_URL;
+    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
     await fetch(url, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data) });
   } catch(e){ console.error('Error DELETE:', e); }
 }
