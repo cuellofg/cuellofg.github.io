@@ -438,13 +438,15 @@ function renderPersonal(){
   const c=document.getElementById('lista-personal');
   if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin personal.</p>';return;}
   c.innerHTML=personal.map((p,i)=>
-    '<div class="row-between">'+
+    '<div class="row-between" style="flex-wrap:wrap;gap:4px;">'+
     '<div style="flex:1;min-width:0;">'+
     '<div style="font-size:13px;font-weight:600;">'+p.nombre+'</div>'+
     '<div style="font-size:11px;color:#64748b;">'+p.grado+' - L.P.: '+p.lp+'</div>'+
     '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip">'+p.pass+'</span></div>'+
     '</div>'+
-    '<div style="display:flex;gap:10px;align-items:center;margin-left:8px;">'+
+    '<div style="display:flex;gap:6px;align-items:center;margin-left:4px;">'+
+    '<span style="cursor:pointer;font-size:16px;'+(i===0?'opacity:.3;pointer-events:none;':'')+'\" onclick="moverPersona('+i+',-1)">↑</span>'+
+    '<span style="cursor:pointer;font-size:16px;'+(i===personal.length-1?'opacity:.3;pointer-events:none;':'')+'\" onclick="moverPersona('+i+',1)">↓</span>'+
     '<span style="cursor:pointer;color:#3b82f6;font-size:12px;" onclick="editarPersona('+i+')">Editar</span>'+
     '<span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarPersona('+i+')">Quitar</span>'+
     '</div></div>'
@@ -467,12 +469,31 @@ async function agregarPersona(){
 
 async function editarPersona(i){
   const p=personal[i];
-  const nuevoPass=prompt('Nueva contrasena para '+p.nombre+' (Actual: '+p.pass+')','');
+  const nuevoGrado=prompt('Grado (actual: '+p.grado+'):', p.grado);
+  if(nuevoGrado===null) return;
+  const nuevoLP=prompt('L.P. (actual: '+p.lp+'):', p.lp);
+  if(nuevoLP===null) return;
+  const nuevoNombre=prompt('Apellido y Nombre (actual: '+p.nombre+'):', p.nombre);
+  if(nuevoNombre===null) return;
+  const nuevoPass=prompt('Contrasena (actual: '+p.pass+'):', p.pass);
   if(nuevoPass===null) return;
-  if(!nuevoPass.trim()){alert('No puede estar vacia.');return;}
-  personal[i].pass=nuevoPass.trim();
+  if(!nuevoGrado.trim()||!nuevoLP.trim()||!nuevoNombre.trim()||!nuevoPass.trim()){alert('Ningun campo puede estar vacio.');return;}
+  personal[i]={...personal[i], grado:nuevoGrado.trim(), lp:nuevoLP.trim(), nombre:nuevoNombre.trim(), pass:nuevoPass.trim()};
   await apiPost({...personal[i]}, 'personal');
   renderPersonal();
+  renderPlanilla();
+}
+
+async function moverPersona(i, dir){
+  const j = i + dir;
+  if(j<0||j>=personal.length) return;
+  [personal[i], personal[j]] = [personal[j], personal[i]];
+  personal[i].orden = i;
+  personal[j].orden = j;
+  await apiPost({...personal[i]}, 'personal');
+  await apiPost({...personal[j]}, 'personal');
+  renderPersonal();
+  renderPlanilla();
 }
 
 async function eliminarPersona(i){
