@@ -1,0 +1,539 @@
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--font-sans);}
+.app{max-width:520px;margin:0 auto;padding:1rem;}
+.screen{display:none;}.screen.active{display:block;}
+h2{font-size:18px;font-weight:500;color:var(--color-text-primary);margin-bottom:1rem;}
+h3{font-size:14px;font-weight:500;color:var(--color-text-primary);margin-bottom:.6rem;}
+.card{background:var(--color-background-primary);border:0.5px solid var(--color-border-tertiary);border-radius:var(--border-radius-lg);padding:1.1rem;margin-bottom:.9rem;}
+label{font-size:12px;color:var(--color-text-secondary);display:block;margin-bottom:4px;}
+input[type=text],input[type=password],input[type=number],select,textarea{width:100%;font-size:14px;padding:8px 10px;border:0.5px solid var(--color-border-secondary);border-radius:var(--border-radius-md);background:var(--color-background-primary);color:var(--color-text-primary);margin-bottom:.65rem;}
+textarea{resize:vertical;min-height:60px;}
+.btn{display:block;width:100%;padding:10px;border-radius:var(--border-radius-md);font-size:14px;font-weight:500;cursor:pointer;text-align:center;border:0.5px solid var(--color-border-secondary);background:var(--color-background-primary);color:var(--color-text-primary);margin-bottom:7px;}
+.btn:active{transform:scale(0.98);}
+.btn-green{background:#1D9E75;color:#fff;border-color:#0F6E56;}
+.btn-blue{background:#378ADD;color:#fff;border-color:#185FA5;}
+.btn-red{background:#E24B4A;color:#fff;border-color:#A32D2D;}
+.btn-amber{background:#BA7517;color:#fff;border-color:#854F0B;}
+.btn-sm{padding:5px 10px;font-size:12px;width:auto;display:inline-block;margin:0;}
+.tipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:.9rem;}
+.tipo-btn{padding:12px 6px;border-radius:var(--border-radius-md);border:2px solid var(--color-border-secondary);background:var(--color-background-secondary);color:var(--color-text-primary);font-size:15px;font-weight:500;cursor:pointer;text-align:center;}
+.tipo-btn small{display:block;font-size:10px;font-weight:400;margin-top:2px;opacity:.8;}
+.tipo-btn.sel{border-color:#1D9E75;background:#E1F5EE;color:#085041;}
+.alert{padding:8px 12px;border-radius:var(--border-radius-md);font-size:13px;margin-bottom:.65rem;}
+.alert-ok{background:#E1F5EE;color:#085041;border:0.5px solid #5DCAA5;}
+.alert-err{background:#FCEBEB;color:#501313;border:0.5px solid #F09595;}
+.tabs{display:flex;gap:4px;margin-bottom:.9rem;flex-wrap:wrap;}
+.tab{flex:1;padding:7px 3px;border-radius:var(--border-radius-md);border:0.5px solid var(--color-border-secondary);background:var(--color-background-secondary);font-size:11px;cursor:pointer;text-align:center;color:var(--color-text-secondary);min-width:55px;}
+.tab.active{background:var(--color-background-primary);color:var(--color-text-primary);font-weight:500;border-color:var(--color-border-primary);}
+.back{font-size:13px;color:var(--color-text-secondary);cursor:pointer;margin-bottom:.9rem;display:inline-block;}
+.row-between{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:0.5px solid var(--color-border-tertiary);}
+.row-between:last-child{border-bottom:none;}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
+table{width:100%;border-collapse:collapse;font-size:11px;}
+th{background:var(--color-background-secondary);color:var(--color-text-secondary);font-weight:500;padding:5px 3px;text-align:center;border:0.5px solid var(--color-border-tertiary);}
+th.col-fixed{text-align:left;padding-left:5px;}
+td{padding:4px 3px;border:0.5px solid var(--color-border-tertiary);text-align:center;color:var(--color-text-primary);white-space:nowrap;}
+td.col-fixed{text-align:left;padding-left:5px;background:var(--color-background-secondary);font-size:11px;}
+.pass-chip{font-family:var(--font-mono);font-size:12px;background:var(--color-background-secondary);border:0.5px solid var(--color-border-secondary);border-radius:4px;padding:2px 7px;color:var(--color-text-primary);}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;}
+</style>
+
+<div class="app">
+
+<!-- HOME -->
+<div id="sc-home" class="screen active">
+  <div style="text-align:center;padding:1.8rem 0 1.3rem;">
+    <div style="font-size:34px;margin-bottom:7px;">📋</div>
+    <h2 style="font-size:21px;">Sistema de Guardias</h2>
+    <p id="home-mes" style="font-size:13px;color:var(--color-text-secondary);margin-top:3px;"></p>
+  </div>
+  <button class="btn btn-green" onclick="goTo('sc-login')">Registrar mi asistencia</button>
+  <button class="btn btn-blue" onclick="goTo('sc-admin-login')">Panel de administrador</button>
+</div>
+
+<!-- LOGIN USUARIO -->
+<div id="sc-login" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Volver</span>
+  <h2>Identificate</h2>
+  <div class="card">
+    <label>Tu nombre</label>
+    <select id="sel-nombre"></select>
+    <label>Tu contraseña</label>
+    <input type="password" id="inp-pass" placeholder="Ingresá tu contraseña" autocomplete="off">
+    <div id="login-err" class="alert alert-err" style="display:none;"></div>
+    <button class="btn btn-green" onclick="doLogin()">Continuar</button>
+  </div>
+</div>
+
+<!-- REGISTRO -->
+<div id="sc-registro" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Volver</span>
+  <h2 id="reg-title">Hola...</h2>
+  <div class="card">
+    <div id="reg-info" style="margin-bottom:.9rem;"></div>
+    <label style="margin-bottom:7px;">¿Qué tipo de asistencia registrás hoy?</label>
+    <div class="tipo-grid" id="tipos-grid"></div>
+    <div style="border-top:0.5px solid var(--color-border-tertiary);padding-top:.8rem;margin-top:.2rem;">
+      <label style="margin-bottom:6px;font-size:12px;color:var(--color-text-secondary);">O registrar un rango de días (ej: vacaciones)</label>
+      <div class="grid2">
+        <div><label>Desde día</label><input type="number" id="rango-desde" min="1" max="31" placeholder="1"></div>
+        <div><label>Hasta día</label><input type="number" id="rango-hasta" min="1" max="31" placeholder="5"></div>
+      </div>
+    </div>
+    <div id="reg-err" class="alert alert-err" style="display:none;"></div>
+    <button class="btn btn-green" onclick="doRegistro()">Confirmar asistencia</button>
+  </div>
+</div>
+
+<!-- OK -->
+<div id="sc-ok" class="screen">
+  <div style="text-align:center;padding:2.5rem 1rem;">
+    <div style="font-size:46px;margin-bottom:.9rem;">✅</div>
+    <h2>¡Registrado!</h2>
+    <div id="ok-info" style="font-size:14px;color:var(--color-text-secondary);margin:1rem 0 1.8rem;line-height:1.6;"></div>
+    <button class="btn btn-green" onclick="goTo('sc-home')">Listo</button>
+  </div>
+</div>
+
+<!-- ADMIN LOGIN -->
+<div id="sc-admin-login" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Volver</span>
+  <h2>Acceso administrador</h2>
+  <div class="card">
+    <label>Contraseña de administrador</label>
+    <input type="password" id="inp-admin-pass" placeholder="Contraseña">
+    <div id="admin-err" class="alert alert-err" style="display:none;"></div>
+    <button class="btn btn-green" onclick="doAdminLogin()">Entrar</button>
+  </div>
+</div>
+
+<!-- ADMIN PANEL -->
+<div id="sc-admin" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Salir</span>
+  <h2>Panel de administrador</h2>
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('tab-planilla',this)">Planilla</div>
+    <div class="tab" onclick="switchTab('tab-personal',this)">Personal</div>
+    <div class="tab" onclick="switchTab('tab-rangos',this)">Rangos</div>
+    <div class="tab" onclick="switchTab('tab-config',this)">Configurar</div>
+    <div class="tab" onclick="switchTab('tab-export',this)">Exportar</div>
+  </div>
+
+  <!-- PLANILLA -->
+  <div id="tab-planilla">
+    <div style="overflow-x:auto;" id="planilla-container"></div>
+  </div>
+
+  <!-- PERSONAL -->
+  <div id="tab-personal" style="display:none;">
+    <div class="card">
+      <h3>Agregar persona</h3>
+      <div class="grid2">
+        <div><label>Grado</label><input type="text" id="inp-grado" placeholder="Ej: Sargento"></div>
+        <div><label>L.P.</label><input type="text" id="inp-lp" placeholder="Ej: 12345"></div>
+      </div>
+      <label>Apellido y Nombre</label>
+      <input type="text" id="inp-nombre" placeholder="Ej: García, Juan">
+      <label>Contraseña (texto + números)</label>
+      <input type="text" id="inp-new-pass" placeholder="Ej: Garcia2025" autocomplete="off">
+      <button class="btn btn-green" onclick="agregarPersona()">Agregar persona</button>
+    </div>
+    <div class="card">
+      <h3>Personal registrado</h3>
+      <div id="lista-personal"></div>
+    </div>
+  </div>
+
+  <!-- RANGOS -->
+  <div id="tab-rangos" style="display:none;">
+    <div class="card">
+      <h3>Aplicar rango a una persona</h3>
+      <p style="font-size:12px;color:var(--color-text-secondary);margin-bottom:.7rem;">Útil para vacaciones, licencias, francos, etc.</p>
+      <label>Persona</label>
+      <select id="rango-persona"></select>
+      <div class="grid3">
+        <div><label>Desde día</label><input type="number" id="rango-admin-desde" min="1" max="31" placeholder="5"></div>
+        <div><label>Hasta día</label><input type="number" id="rango-admin-hasta" min="1" max="31" placeholder="15"></div>
+        <div><label>Tipo</label><select id="rango-admin-tipo"></select></div>
+      </div>
+      <button class="btn btn-amber" onclick="aplicarRangoAdmin()">Aplicar rango</button>
+    </div>
+    <div class="card">
+      <h3>Editar celda individual</h3>
+      <div class="grid2">
+        <div><label>Persona</label><select id="celda-persona"></select></div>
+        <div><label>Día</label><input type="number" id="celda-dia" min="1" max="31" placeholder="8"></div>
+      </div>
+      <label>Valor</label>
+      <select id="celda-tipo"></select>
+      <button class="btn btn-blue" onclick="editarCelda()">Guardar celda</button>
+    </div>
+  </div>
+
+  <!-- CONFIG -->
+  <div id="tab-config" style="display:none;">
+    <div class="card">
+      <h3>Datos del mes</h3>
+      <label>Nombre del mes</label>
+      <input type="text" id="cfg-mes" placeholder="Ej: ABRIL 2026">
+      <div class="grid2">
+        <div><label>Días del mes</label><input type="number" id="cfg-dias" min="28" max="31"></div>
+        <div><label>Día de inicio semana (1=Lun)</label><input type="number" id="cfg-inicio" min="0" max="6"></div>
+      </div>
+      <button class="btn btn-blue" onclick="guardarConfigMes()">Guardar</button>
+    </div>
+    <div class="card">
+      <h3>Tipos de asistencia</h3>
+      <div class="grid3">
+        <div><label>Código</label><input type="text" id="cfg-tipo-cod" placeholder="LC" maxlength="5"></div>
+        <div><label>Descripción</label><input type="text" id="cfg-tipo-desc" placeholder="Licencia"></div>
+        <div><label>Color</label>
+          <select id="cfg-tipo-color">
+            <option value="#1D9E75">Verde</option>
+            <option value="#378ADD">Azul</option>
+            <option value="#BA7517">Naranja</option>
+            <option value="#E24B4A">Rojo</option>
+            <option value="#7F77DD">Violeta</option>
+            <option value="#888780">Gris</option>
+            <option value="#D4537E">Rosa</option>
+          </select>
+        </div>
+      </div>
+      <button class="btn btn-blue" onclick="agregarTipo()">Agregar tipo</button>
+      <div id="lista-tipos" style="margin-top:.6rem;"></div>
+    </div>
+  </div>
+
+  <!-- EXPORTAR -->
+  <div id="tab-export" style="display:none;">
+    <div class="card">
+      <p style="font-size:14px;color:var(--color-text-secondary);margin-bottom:.9rem;">Descargá la planilla completa en CSV para abrir en Excel.</p>
+      <button class="btn btn-blue" onclick="exportarCSV()">Descargar CSV para Excel</button>
+    </div>
+    <div class="card">
+      <p style="font-size:13px;color:var(--color-text-secondary);margin-bottom:.9rem;">Reiniciar solo los registros del mes. El personal y configuración se mantienen.</p>
+      <button class="btn btn-red" onclick="reiniciarMes()">Reiniciar registros del mes</button>
+    </div>
+  </div>
+</div>
+
+</div>
+
+<script>
+const ADMIN_PASS = "Admin2026";
+const DIAS_SEM = ['D','L','M','M','J','V','S'];
+
+let cfg = JSON.parse(localStorage.getItem('grd_cfg3') || 'null') || {
+  mes:"MARZO 2026", dias:31, inicioSem:0,
+  tipos:[
+    {cod:"G",desc:"Guardia",color:"#1D9E75"},
+    {cod:"M/T",desc:"Mañana y Tarde",color:"#378ADD"},
+    {cod:"M",desc:"Solo Mañana",color:"#BA7517"},
+    {cod:"T",desc:"Solo Tarde",color:"#7F77DD"},
+    {cod:"LC",desc:"Licencia",color:"#E24B4A"},
+    {cod:"VAC",desc:"Vacaciones",color:"#D4537E"},
+  ]
+};
+let personal = JSON.parse(localStorage.getItem('grd_personal3') || '[]');
+let registros = JSON.parse(localStorage.getItem('grd_registros3') || '{}');
+let usuarioActual = null;
+let tipoSel = null;
+
+if(!personal.length){
+  personal=[
+    {grado:"Sargento",lp:"11111",nombre:"García, Juan",pass:"Garcia2025"},
+    {grado:"Cabo",lp:"22222",nombre:"López, María",pass:"Lopez2025"},
+    {grado:"Agente",lp:"33333",nombre:"Martínez, Carlos",pass:"Martinez2025"},
+  ];
+  sv('personal');
+}
+
+function sv(k){
+  if(k==='cfg') localStorage.setItem('grd_cfg3',JSON.stringify(cfg));
+  if(k==='personal') localStorage.setItem('grd_personal3',JSON.stringify(personal));
+  if(k==='registros') localStorage.setItem('grd_registros3',JSON.stringify(registros));
+}
+
+function goTo(id){
+  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  tipoSel=null;
+  document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('sel'));
+  document.getElementById('home-mes').textContent=cfg.mes;
+}
+
+function llenarSel(id,arr,vFn,lFn,empty){
+  const s=document.getElementById(id); if(!s) return;
+  s.innerHTML='<option value="">'+(empty||'— Seleccioná —')+'</option>';
+  arr.forEach((x,i)=>{const o=document.createElement('option');o.value=vFn(x,i);o.textContent=lFn(x,i);s.appendChild(o);});
+}
+function llenarPersonas(id){llenarSel(id,personal,p=>p.nombre,p=>p.nombre);}
+function llenarTipos(id){llenarSel(id,cfg.tipos,t=>t.cod,t=>t.cod+' – '+t.desc);}
+function llenarNombresLogin(){llenarSel('sel-nombre',personal,(_,i)=>i,p=>p.nombre,'— Tu nombre —');}
+
+function doLogin(){
+  const idx=document.getElementById('sel-nombre').value;
+  const pass=document.getElementById('inp-pass').value;
+  const err=document.getElementById('login-err');
+  if(idx===''){err.textContent='Seleccioná tu nombre.';err.style.display='block';return;}
+  if(!pass){err.textContent='Ingresá tu contraseña.';err.style.display='block';return;}
+  const p=personal[idx];
+  if(p.pass!==pass){err.textContent='Contraseña incorrecta. Consultá al administrador.';err.style.display='block';return;}
+  err.style.display='none';
+  document.getElementById('inp-pass').value='';
+  usuarioActual={idx:parseInt(idx),...p};
+  const dia=new Date().getDate();
+  const yaReg=registros[p.nombre]&&registros[p.nombre][dia];
+  document.getElementById('reg-title').textContent='Hola, '+p.nombre.split(',')[0];
+  document.getElementById('reg-info').innerHTML=yaReg
+    ?'<div class="alert alert-ok">Ya registraste <strong>'+yaReg+'</strong> hoy — día '+dia+'.</div>'
+    :'<div style="font-size:13px;color:var(--color-text-secondary);">Hoy es el día <strong>'+dia+'</strong> de '+cfg.mes+'</div>';
+  renderTiposGrid();
+  document.getElementById('rango-desde').value='';
+  document.getElementById('rango-hasta').value='';
+  goTo('sc-registro');
+}
+
+function renderTiposGrid(){
+  const g=document.getElementById('tipos-grid'); g.innerHTML='';
+  cfg.tipos.forEach(t=>{
+    const d=document.createElement('div');
+    d.className='tipo-btn';
+    d.innerHTML=t.cod+'<small>'+t.desc+'</small>';
+    d.onclick=()=>{tipoSel=t.cod;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('sel'));d.classList.add('sel');};
+    g.appendChild(d);
+  });
+}
+
+function doRegistro(){
+  const err=document.getElementById('reg-err');
+  if(!tipoSel){err.textContent='Seleccioná el tipo de asistencia.';err.style.display='block';return;}
+  err.style.display='none';
+  const hoy=new Date().getDate();
+  const dv=parseInt(document.getElementById('rango-desde').value);
+  const hv=parseInt(document.getElementById('rango-hasta').value);
+  const desde=isNaN(dv)?hoy:dv;
+  const hasta=isNaN(hv)?desde:hv;
+  if(desde>hasta){err.textContent='El día "desde" no puede ser mayor que "hasta".';err.style.display='block';return;}
+  if(!registros[usuarioActual.nombre]) registros[usuarioActual.nombre]={};
+  for(let d=desde;d<=hasta;d++) registros[usuarioActual.nombre][d]=tipoSel;
+  sv('registros');
+  const rango=desde===hasta?'Día '+desde:'Días '+desde+' al '+hasta;
+  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' → '+tipoSel+'<br><span style="font-size:12px;">'+cfg.mes+'</span>';
+  goTo('sc-ok');
+}
+
+function doAdminLogin(){
+  const pass=document.getElementById('inp-admin-pass').value;
+  const err=document.getElementById('admin-err');
+  if(pass!==ADMIN_PASS){err.textContent='Contraseña incorrecta.';err.style.display='block';return;}
+  err.style.display='none';
+  document.getElementById('inp-admin-pass').value='';
+  goTo('sc-admin');
+  renderAll();
+}
+
+function switchTab(id,el){
+  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-export'].forEach(t=>{
+    document.getElementById(t).style.display=t===id?'block':'none';
+  });
+  if(id==='tab-planilla') renderPlanilla();
+  if(id==='tab-personal') renderPersonal();
+  if(id==='tab-rangos') renderRangos();
+  if(id==='tab-config') renderConfig();
+}
+
+function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();}
+
+function renderPlanilla(){
+  const c=document.getElementById('planilla-container');
+  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:var(--color-text-secondary);padding:1rem 0;">Sin personal registrado.</p>';return;}
+  const inicio=parseInt(cfg.inicioSem)||0;
+  let h='<table><thead><tr>';
+  h+='<th class="col-fixed" style="min-width:70px;">Grado</th>';
+  h+='<th class="col-fixed" style="min-width:50px;">L.P.</th>';
+  h+='<th class="col-fixed" style="min-width:110px;">Apellido y Nombre</th>';
+  for(let d=1;d<=cfg.dias;d++){
+    const semIdx=(inicio+d-1)%7;
+    const ds=DIAS_SEM[semIdx];
+    const esFinde=(semIdx===0||semIdx===6);
+    h+='<th style="min-width:22px;'+(esFinde?'color:#E24B4A;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
+  }
+  h+='</tr></thead><tbody>';
+  personal.forEach((p,pi)=>{
+    h+='<tr>';
+    h+='<td class="col-fixed">'+p.grado+'</td>';
+    h+='<td class="col-fixed">'+p.lp+'</td>';
+    h+='<td class="col-fixed" style="font-weight:500;">'+p.nombre+'</td>';
+    for(let d=1;d<=cfg.dias;d++){
+      const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
+      const t=cfg.tipos.find(x=>x.cod===v);
+      const col=t?t.color:'';
+      const semIdx=(inicio+d-1)%7;
+      const esFinde=(semIdx===0||semIdx===6);
+      h+='<td style="color:'+col+';font-weight:'+(v?'600':'400')+';background:'+(esFinde?'var(--color-background-secondary)':'')+';">'+v+'</td>';
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
+}
+
+function renderPersonal(){
+  llenarNombresLogin();
+  const c=document.getElementById('lista-personal');
+  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:var(--color-text-secondary);">Sin personal.</p>';return;}
+  c.innerHTML=personal.map((p,i)=>`
+    <div class="row-between">
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:13px;font-weight:500;">${p.nombre}</div>
+        <div style="font-size:11px;color:var(--color-text-secondary);">${p.grado} · L.P.: ${p.lp}</div>
+        <div style="font-size:11px;margin-top:2px;">Contraseña: <span class="pass-chip">${p.pass}</span></div>
+      </div>
+      <div style="display:flex;gap:8px;align-items:center;margin-left:8px;">
+        <span style="cursor:pointer;color:#378ADD;font-size:12px;" onclick="editarPersona(${i})">Editar</span>
+        <span style="cursor:pointer;color:#E24B4A;font-size:12px;" onclick="eliminarPersona(${i})">Quitar</span>
+      </div>
+    </div>`).join('');
+}
+
+function agregarPersona(){
+  const grado=document.getElementById('inp-grado').value.trim();
+  const lp=document.getElementById('inp-lp').value.trim();
+  const nombre=document.getElementById('inp-nombre').value.trim();
+  const pass=document.getElementById('inp-new-pass').value.trim();
+  if(!grado||!lp||!nombre||!pass){alert('Completá todos los campos.');return;}
+  if(personal.find(p=>p.nombre===nombre)){alert('Ya existe una persona con ese nombre.');return;}
+  personal.push({grado,lp,nombre,pass});
+  sv('personal');
+  ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(id=>document.getElementById(id).value='');
+  renderPersonal();
+  renderPlanilla();
+}
+
+function editarPersona(i){
+  const p=personal[i];
+  const nuevoPass=prompt('Nueva contraseña para '+p.nombre+'\n(Actual: '+p.pass+')','');
+  if(nuevoPass===null) return;
+  if(!nuevoPass.trim()){alert('La contraseña no puede estar vacía.');return;}
+  personal[i].pass=nuevoPass.trim();
+  sv('personal');
+  renderPersonal();
+}
+
+function eliminarPersona(i){
+  if(!confirm('¿Quitar a '+personal[i].nombre+'? Se borrarán sus registros del mes.')) return;
+  const n=personal[i].nombre;
+  personal.splice(i,1);
+  sv('personal');
+  delete registros[n];
+  sv('registros');
+  renderPersonal();
+  renderPlanilla();
+}
+
+function renderRangos(){
+  llenarPersonas('rango-persona');
+  llenarPersonas('celda-persona');
+  llenarTipos('rango-admin-tipo');
+  llenarTipos('celda-tipo');
+}
+
+function aplicarRangoAdmin(){
+  const persona=document.getElementById('rango-persona').value;
+  const desde=parseInt(document.getElementById('rango-admin-desde').value);
+  const hasta=parseInt(document.getElementById('rango-admin-hasta').value);
+  const tipo=document.getElementById('rango-admin-tipo').value;
+  if(!persona||!tipo||isNaN(desde)||isNaN(hasta)){alert('Completá todos los campos.');return;}
+  if(desde>hasta){alert('"Desde" no puede ser mayor que "hasta".');return;}
+  if(!registros[persona]) registros[persona]={};
+  for(let d=desde;d<=hasta;d++) registros[persona][d]=tipo;
+  sv('registros');
+  alert('✓ Aplicado: '+persona+', días '+desde+' al '+hasta+' → '+tipo);
+  renderPlanilla();
+}
+
+function editarCelda(){
+  const persona=document.getElementById('celda-persona').value;
+  const dia=parseInt(document.getElementById('celda-dia').value);
+  const tipo=document.getElementById('celda-tipo').value;
+  if(!persona||isNaN(dia)||!tipo){alert('Completá todos los campos.');return;}
+  if(!registros[persona]) registros[persona]={};
+  registros[persona][dia]=tipo;
+  sv('registros');
+  alert('✓ Celda actualizada: '+persona+', día '+dia+' → '+tipo);
+  renderPlanilla();
+}
+
+function renderConfig(){
+  document.getElementById('cfg-mes').value=cfg.mes;
+  document.getElementById('cfg-dias').value=cfg.dias;
+  document.getElementById('cfg-inicio').value=cfg.inicioSem||0;
+  const lt=document.getElementById('lista-tipos');
+  lt.innerHTML=cfg.tipos.map((t,i)=>`
+    <div class="row-between">
+      <span style="font-size:13px;"><span class="dot" style="background:${t.color};"></span><strong>${t.cod}</strong> – ${t.desc}</span>
+      <span style="cursor:pointer;color:#E24B4A;font-size:12px;" onclick="eliminarTipo(${i})">Quitar</span>
+    </div>`).join('');
+}
+
+function guardarConfigMes(){
+  cfg.mes=document.getElementById('cfg-mes').value.trim()||cfg.mes;
+  cfg.dias=parseInt(document.getElementById('cfg-dias').value)||31;
+  cfg.inicioSem=parseInt(document.getElementById('cfg-inicio').value)||0;
+  sv('cfg');
+  alert('Configuración guardada.');
+  renderPlanilla();
+}
+
+function agregarTipo(){
+  const cod=document.getElementById('cfg-tipo-cod').value.trim().toUpperCase();
+  const desc=document.getElementById('cfg-tipo-desc').value.trim();
+  const color=document.getElementById('cfg-tipo-color').value;
+  if(!cod||!desc){alert('Completá código y descripción.');return;}
+  if(cfg.tipos.find(t=>t.cod===cod)){alert('Ese código ya existe.');return;}
+  cfg.tipos.push({cod,desc,color});
+  sv('cfg');
+  document.getElementById('cfg-tipo-cod').value='';
+  document.getElementById('cfg-tipo-desc').value='';
+  renderConfig();
+}
+
+function eliminarTipo(i){
+  if(!confirm('¿Quitar el tipo "'+cfg.tipos[i].cod+'"?')) return;
+  cfg.tipos.splice(i,1);
+  sv('cfg');
+  renderConfig();
+}
+
+function exportarCSV(){
+  let csv='Grado,L.P.,Apellido y Nombre';
+  for(let d=1;d<=cfg.dias;d++) csv+=','+d;
+  csv+='\n';
+  personal.forEach(p=>{
+    csv+='"'+p.grado+'","'+p.lp+'","'+p.nombre+'"';
+    for(let d=1;d<=cfg.dias;d++) csv+=','+(registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'');
+    csv+='\n';
+  });
+  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
+  const a=document.createElement('a');
+  a.href=URL.createObjectURL(blob);
+  a.download='Guardias_'+cfg.mes.replace(/ /g,'_')+'.csv';
+  a.click();
+}
+
+function reiniciarMes(){
+  if(!confirm('¿Reiniciar todos los registros del mes?')) return;
+  registros={};
+  sv('registros');
+  renderPlanilla();
+  alert('Registros reiniciados.');
+}
+
+goTo('sc-home');
+</script>
