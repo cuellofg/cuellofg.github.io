@@ -497,18 +497,15 @@ async function agregarPersona(){
   renderPersonal(); renderPlanilla(); llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
 }
 
+
 async function editarPersona(i){
   const p=personal[i];
-  const nuevoGrado=prompt('Grado (actual: '+p.grado+'):', p.grado);
-  if(nuevoGrado===null) return;
-  const nuevoLP=prompt('L.P. (actual: '+p.lp+'):', p.lp);
-  if(nuevoLP===null) return;
   const nuevoNombre=prompt('Apellido y Nombre (actual: '+p.nombre+'):', p.nombre);
   if(nuevoNombre===null) return;
   const nuevoPass=prompt('Contrasena (actual: '+p.pass+'):', p.pass);
   if(nuevoPass===null) return;
-  if(!nuevoGrado.trim()||!nuevoLP.trim()||!nuevoNombre.trim()||!nuevoPass.trim()){alert('Ningun campo puede estar vacio.');return;}
-  personal[i]={...personal[i], grado:nuevoGrado.trim(), lp:nuevoLP.trim(), nombre:nuevoNombre.trim(), pass:nuevoPass.trim()};
+  if(!nuevoNombre.trim()||!nuevoPass.trim()){alert('Ningun campo puede estar vacio.');return;}
+  personal[i]={...personal[i], nombre:nuevoNombre.trim(), pass:nuevoPass.trim()};
   await apiPost({...personal[i]}, 'personal');
   renderPersonal();
   renderPlanilla();
