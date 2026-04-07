@@ -272,6 +272,17 @@ async function cargarPersonal(){
   personal.sort((a,b) => (a.orden||0) - (b.orden||0));
 }
 
+async function cargarConfig(){
+  const data = await apiGet('config');
+  const cfgAzure = data.find(d => d.id === 'configuracion');
+  if(cfgAzure && cfgAzure.tipos){
+    cfg.tipos = cfgAzure.tipos;
+  }
+  if(cfgAzure && cfgAzure.mes) cfg.mes = cfgAzure.mes;
+  if(cfgAzure && cfgAzure.dias) cfg.dias = cfgAzure.dias;
+  if(cfgAzure && cfgAzure.inicioSem !== undefined) cfg.inicioSem = cfgAzure.inicioSem;
+}
+
 async function cargarRegistros(){
   const data = await apiGet();
   registros = {};
@@ -295,6 +306,7 @@ async function iniciarLogin(){
   goTo('sc-login');
   document.getElementById('login-loader').style.display='block';
   document.getElementById('login-form').style.display='none';
+  await cargarConfig();
   await cargarPersonal();
   llenarNombresLogin();
   document.getElementById('login-loader').style.display='none';
@@ -371,6 +383,7 @@ async function doAdminLogin(){
   err.style.display='none';
   document.getElementById('inp-admin-pass').value='';
   goTo('sc-admin');
+  await cargarConfig();
   await cargarPersonal();
   await cargarRegistros();
   // Verificar si cambio el mes
@@ -551,14 +564,17 @@ function renderConfig(){
   ).join('');
 }
 
-function guardarConfigMes(){
+async function guardarConfigMes(){
   cfg.mes=document.getElementById('cfg-mes').value.trim()||cfg.mes;
   cfg.dias=parseInt(document.getElementById('cfg-dias').value)||30;
   cfg.inicioSem=parseInt(document.getElementById('cfg-inicio').value)||0;
-  svLocal('cfg'); alert('Configuracion guardada.'); renderPlanilla();
+  svLocal('cfg');
+  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
+  alert('Configuracion guardada para todos.');
+  renderPlanilla();
 }
 
-function agregarTipo(){
+async function agregarTipo(){
   const cod=document.getElementById('cfg-tipo-cod').value.trim().toUpperCase();
   const desc=document.getElementById('cfg-tipo-desc').value.trim();
   const color=document.getElementById('cfg-tipo-color').value;
@@ -567,12 +583,15 @@ function agregarTipo(){
   cfg.tipos.push({cod,desc,color}); svLocal('cfg');
   document.getElementById('cfg-tipo-cod').value='';
   document.getElementById('cfg-tipo-desc').value='';
+  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
   renderConfig();
 }
 
-function eliminarTipo(i){
+async function eliminarTipo(i){
   if(!confirm('Quitar el tipo "'+cfg.tipos[i].cod+'"?')) return;
-  cfg.tipos.splice(i,1); svLocal('cfg'); renderConfig();
+  cfg.tipos.splice(i,1); svLocal('cfg');
+  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
+  renderConfig();
 }
 
 function exportarCSV(){
