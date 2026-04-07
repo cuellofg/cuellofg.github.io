@@ -438,8 +438,6 @@ function renderPlanilla(){
   if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem 0;">Sin personal.</p>';return;}
   const inicio=parseInt(cfg.inicioSem)||0;
   let h='<table><thead><tr>';
-  h+='<th class="col-fixed" style="min-width:70px;">Grado</th>';
-  h+='<th class="col-fixed" style="min-width:50px;">L.P.</th>';
   h+='<th class="col-fixed" style="min-width:110px;">Apellido y Nombre</th>';
   for(let d=1;d<=cfg.dias;d++){
     const semIdx=(inicio+d-1)%7;
@@ -450,8 +448,6 @@ function renderPlanilla(){
   h+='</tr></thead><tbody>';
   personal.forEach(p=>{
     h+='<tr>';
-    h+='<td class="col-fixed">'+p.grado+'</td>';
-    h+='<td class="col-fixed">'+p.lp+'</td>';
     h+='<td class="col-fixed" style="font-weight:600;">'+p.nombre+'</td>';
     for(let d=1;d<=cfg.dias;d++){
       const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
@@ -614,11 +610,11 @@ async function eliminarTipo(i){
 }
 
 function exportarCSV(){
-  let csv='Grado,L.P.,Apellido y Nombre';
+  let csv='Apellido y Nombre';
   for(let d=1;d<=cfg.dias;d++) csv+=','+d;
   csv+='\n';
   personal.forEach(p=>{
-    csv+='"'+p.grado+'","'+p.lp+'","'+p.nombre+'"';
+    csv+='"'+p.nombre+'"';
     for(let d=1;d<=cfg.dias;d++) csv+=','+(registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'');
     csv+='\n';
   });
