@@ -373,7 +373,8 @@ function renderTiposGrid(){
   cfg.tipos.forEach(t=>{
     const d=document.createElement('div');
     d.className='tipo-btn';
-    d.innerHTML=t.cod+'<small>'+t.desc+'</small>';
+    d.setAttribute('translate','no');
+    d.innerHTML='<span translate="no">'+t.cod+'</span><small translate="no">'+t.desc+'</small>';
     d.onclick=()=>{tipoSel=t.cod;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('sel'));d.classList.add('sel');};
     g.appendChild(d);
   });
