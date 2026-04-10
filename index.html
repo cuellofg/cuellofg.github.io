@@ -4,65 +4,78 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="google" content="notranslate">
+<link rel="icon" href="data:,">
 <title>Sistema de Guardias</title>
-
-</head>
-<body>
-  <style>
+<style>
 *{box-sizing:border-box;margin:0;padding:0;}
-body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a2e;}
-.app{max-width:520px;margin:0 auto;padding:1rem;}
+body{font-family:'Segoe UI',sans-serif;background:#f4f6f9;color:#1a1a2e;min-height:100vh;}
+.app{width:100%;max-width:600px;margin:0 auto;padding:1rem;}
 .screen{display:none;}.screen.active{display:block;}
 h2{font-size:18px;font-weight:600;color:#1a1a2e;margin-bottom:1rem;}
 h3{font-size:14px;font-weight:600;color:#1a1a2e;margin-bottom:.6rem;}
-.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem;margin-bottom:.9rem;box-shadow:0 1px 3px rgba(0,0,0,0.06);}
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:1.1rem;margin-bottom:.9rem;box-shadow:0 1px 3px rgba(0,0,0,.06);}
 label{font-size:12px;color:#64748b;display:block;margin-bottom:4px;}
-input[type=text],input[type=password],input[type=number],select{width:100%;font-size:14px;padding:9px 11px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#1a1a2e;margin-bottom:.65rem;outline:none;}
+input[type=text],input[type=password],input[type=number],select{width:100%;font-size:14px;padding:9px 11px;border:1px solid #e2e8f0;border-radius:8px;background:#fff;color:#1a1a2e;margin-bottom:.65rem;outline:none;-webkit-appearance:none;}
 input:focus,select:focus{border-color:#3b82f6;}
-.btn{display:block;width:100%;padding:11px;border-radius:8px;font-size:14px;font-weight:600;cursor:pointer;text-align:center;border:none;margin-bottom:8px;transition:opacity .15s;}
-.btn:active{opacity:.85;}
+.btn{display:block;width:100%;padding:12px;border-radius:8px;font-size:15px;font-weight:600;cursor:pointer;text-align:center;border:none;margin-bottom:8px;transition:opacity .15s;-webkit-tap-highlight-color:transparent;}
+.btn:active{opacity:.8;}
 .btn-green{background:#10b981;color:#fff;}
 .btn-blue{background:#3b82f6;color:#fff;}
 .btn-red{background:#ef4444;color:#fff;}
 .btn-amber{background:#f59e0b;color:#fff;}
-.tipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin-bottom:.9rem;}
-.tipo-btn{padding:12px 6px;border-radius:8px;border:2px solid #e2e8f0;background:#f8fafc;color:#1a1a2e;font-size:15px;font-weight:600;cursor:pointer;text-align:center;transition:all .15s;}
-.tipo-btn small{display:block;font-size:10px;font-weight:400;margin-top:2px;opacity:.8;}
+.tipo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:.9rem;}
+.tipo-btn{padding:14px 6px;border-radius:10px;border:2px solid #e2e8f0;background:#f8fafc;color:#1a1a2e;font-size:15px;font-weight:700;cursor:pointer;text-align:center;transition:all .15s;-webkit-tap-highlight-color:transparent;}
+.tipo-btn small{display:block;font-size:10px;font-weight:400;margin-top:3px;opacity:.75;}
 .tipo-btn.sel{border-color:#10b981;background:#ecfdf5;color:#065f46;}
-.alert{padding:9px 13px;border-radius:8px;font-size:13px;margin-bottom:.65rem;}
+.alert{padding:10px 14px;border-radius:8px;font-size:13px;margin-bottom:.65rem;line-height:1.5;}
 .alert-ok{background:#ecfdf5;color:#065f46;border:1px solid #6ee7b7;}
 .alert-err{background:#fef2f2;color:#7f1d1d;border:1px solid #fca5a5;}
 .tabs{display:flex;gap:4px;margin-bottom:.9rem;flex-wrap:wrap;}
-.tab{flex:1;padding:7px 3px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:11px;cursor:pointer;text-align:center;color:#64748b;min-width:55px;transition:all .15s;}
+.tab{flex:1;padding:8px 3px;border-radius:8px;border:1px solid #e2e8f0;background:#f8fafc;font-size:11px;cursor:pointer;text-align:center;color:#64748b;min-width:50px;transition:all .15s;}
 .tab.active{background:#fff;color:#1a1a2e;font-weight:600;border-color:#3b82f6;}
-.back{font-size:13px;color:#64748b;cursor:pointer;margin-bottom:.9rem;display:inline-block;}
-.row-between{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid #f1f5f9;}
+.back{font-size:13px;color:#64748b;cursor:pointer;margin-bottom:.9rem;display:inline-block;padding:4px 0;}
+.row-between{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid #f1f5f9;gap:8px;}
 .row-between:last-child{border-bottom:none;}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
 .grid3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;}
-table{width:100%;border-collapse:collapse;font-size:11px;}
-th{background:#f8fafc;color:#64748b;font-weight:600;padding:5px 3px;text-align:center;border:1px solid #e2e8f0;}
-th.col-fixed{text-align:left;padding-left:5px;}
-td{padding:4px 3px;border:1px solid #e2e8f0;text-align:center;color:#1a1a2e;white-space:nowrap;}
-td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;}
 .pass-chip{font-family:monospace;font-size:12px;background:#f1f5f9;border:1px solid #e2e8f0;border-radius:4px;padding:2px 7px;}
-.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;}
+.dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:5px;flex-shrink:0;}
 .loader{text-align:center;padding:2rem;color:#64748b;font-size:14px;}
 .spinner{display:inline-block;width:24px;height:24px;border:3px solid #e2e8f0;border-top-color:#3b82f6;border-radius:50%;animation:spin .7s linear infinite;margin-bottom:8px;}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* Planilla */
+.planilla-wrap{overflow-x:auto;overflow-y:auto;max-height:65vh;border:1px solid #e2e8f0;border-radius:10px;}
+table{border-collapse:collapse;font-size:11px;min-width:100%;}
+th{background:#f1f5f9;color:#64748b;font-weight:600;padding:6px 4px;text-align:center;border:1px solid #e2e8f0;white-space:nowrap;position:sticky;top:0;z-index:2;}
+th.col-fixed{text-align:left;padding-left:8px;position:sticky;left:0;z-index:3;background:#f1f5f9;}
+td{padding:5px 4px;border:1px solid #e2e8f0;text-align:center;color:#1a1a2e;white-space:nowrap;}
+td.col-fixed{text-align:left;padding-left:8px;background:#f8fafc;font-size:11px;font-weight:600;position:sticky;left:0;z-index:1;min-width:120px;max-width:160px;overflow:hidden;text-overflow:ellipsis;}
+/* Responsive */
+@media(max-width:480px){
+  .app{padding:.75rem;}
+  .tipo-grid{grid-template-columns:repeat(2,1fr);}
+  .grid3{grid-template-columns:1fr 1fr;}
+  h2{font-size:16px;}
+  .tab{font-size:10px;padding:6px 2px;}
+  .planilla-wrap{max-height:55vh;}
+}
 </style>
+</head>
+<body>
 <div class="app">
 
+<!-- HOME -->
 <div id="sc-home" class="screen active">
-  <div style="text-align:center;padding:2rem 0 1.5rem;">
-    <div style="font-size:40px;margin-bottom:10px;">📋</div>
-    <h2 style="font-size:22px;">Sistema de Guardias</h2>
-    <p id="home-mes" style="font-size:13px;color:#64748b;margin-top:4px;"></p>
+  <div style="text-align:center;padding:2.5rem 0 1.5rem;">
+    <div style="font-size:48px;margin-bottom:12px;">📋</div>
+    <h2 style="font-size:24px;">Sistema de Guardias</h2>
+    <p id="home-mes" style="font-size:14px;color:#64748b;margin-top:6px;font-weight:500;"></p>
   </div>
   <button class="btn btn-green" onclick="iniciarLogin()">Registrar mi asistencia</button>
   <button class="btn btn-blue" onclick="goTo('sc-admin-login')">Panel de administrador</button>
 </div>
 
+<!-- LOGIN -->
 <div id="sc-login" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2>Identificate</h2>
@@ -72,30 +85,31 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
       <label>Tu nombre</label>
       <select id="sel-nombre"></select>
       <label>Tu contraseña</label>
- <div style="position:relative;margin-bottom:.65rem;">
-  <input type="password" id="inp-pass" placeholder="Ingresa tu contrasena" autocomplete="off" style="padding-right:44px;margin-bottom:0;">
-  <button onclick="togglePass('inp-pass',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;border-radius:6px;color:#94a3b8;transition:all .15s;">
-    <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-  </button>
-</div>
+      <div style="position:relative;margin-bottom:.65rem;">
+        <input type="password" id="inp-pass" placeholder="Ingresa tu contraseña" autocomplete="off" style="padding-right:44px;margin-bottom:0;">
+        <button onclick="togglePass('inp-pass',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+          <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+        </button>
+      </div>
       <div id="login-err" class="alert alert-err" style="display:none;"></div>
       <button class="btn btn-green" onclick="doLogin()">Continuar</button>
     </div>
   </div>
 </div>
 
+<!-- REGISTRO -->
 <div id="sc-registro" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2 id="reg-title">Hola...</h2>
   <div class="card">
     <div id="reg-info" style="margin-bottom:.9rem;"></div>
-    <label style="margin-bottom:7px;">Tipo de asistencia</label>
+    <label style="margin-bottom:8px;">Tipo de asistencia</label>
     <div class="tipo-grid" id="tipos-grid"></div>
     <div style="border-top:1px solid #f1f5f9;padding-top:.8rem;margin-top:.2rem;">
-      <label style="margin-bottom:6px;">O registrar un rango de días</label>
+      <label style="margin-bottom:6px;">O registrar un rango de dias</label>
       <div class="grid2">
-        <div><label>Desde día</label><input type="number" id="rango-desde" min="1" max="31" placeholder="1"></div>
-        <div><label>Hasta día</label><input type="number" id="rango-hasta" min="1" max="31" placeholder="5"></div>
+        <div><label>Desde dia</label><input type="number" id="rango-desde" min="1" max="31" placeholder="1"></div>
+        <div><label>Hasta dia</label><input type="number" id="rango-hasta" min="1" max="31" placeholder="5"></div>
       </div>
     </div>
     <div id="reg-err" class="alert alert-err" style="display:none;"></div>
@@ -103,29 +117,34 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
   </div>
 </div>
 
+<!-- OK -->
 <div id="sc-ok" class="screen">
-  <div style="text-align:center;padding:2.5rem 1rem;">
-    <div style="font-size:48px;margin-bottom:.9rem;">✅</div>
-    <h2>Registrado!</h2>
-    <div id="ok-info" style="font-size:14px;color:#64748b;margin:1rem 0 1.8rem;line-height:1.6;"></div>
+  <div style="text-align:center;padding:3rem 1rem;">
+    <div style="font-size:56px;margin-bottom:1rem;">✅</div>
+    <h2 style="font-size:22px;">Registrado!</h2>
+    <div id="ok-info" style="font-size:14px;color:#64748b;margin:1rem 0 2rem;line-height:1.7;"></div>
     <button class="btn btn-green" onclick="goTo('sc-home')">Listo</button>
   </div>
 </div>
 
+<!-- ADMIN LOGIN -->
 <div id="sc-admin-login" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Volver</span>
   <h2>Acceso administrador</h2>
   <div class="card">
     <label>Contraseña</label>
-    <div style="position:relative;">
-  <input type="password" id="inp-admin-pass" placeholder="Contrasena" style="padding-right:40px;">
-  <span onclick="togglePass('inp-admin-pass',this)" style="position:absolute;right:12px;top:50%;transform:translateY(-50%);cursor:pointer;font-size:16px;color:#64748b;">👁</span>
-</div>
+    <div style="position:relative;margin-bottom:.65rem;">
+      <input type="password" id="inp-admin-pass" placeholder="Contraseña" style="padding-right:44px;margin-bottom:0;">
+      <button onclick="togglePass('inp-admin-pass',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
     <div id="admin-err" class="alert alert-err" style="display:none;"></div>
     <button class="btn btn-green" onclick="doAdminLogin()">Entrar</button>
   </div>
 </div>
 
+<!-- ADMIN PANEL -->
 <div id="sc-admin" class="screen">
   <span class="back" onclick="goTo('sc-home')">← Salir</span>
   <h2>Panel de administrador</h2>
@@ -138,7 +157,9 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
   </div>
 
   <div id="tab-planilla">
-    <div style="overflow-x:auto;" id="planilla-container"><div class="loader"><div class="spinner"></div><br>Cargando...</div></div>
+    <div class="planilla-wrap" id="planilla-container">
+      <div class="loader"><div class="spinner"></div><br>Cargando...</div>
+    </div>
   </div>
 
   <div id="tab-personal" style="display:none;">
@@ -188,12 +209,12 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
     <div class="card">
       <h3>Datos del mes</h3>
       <label>Nombre del mes</label>
-      <input type="text" id="cfg-mes" placeholder="Ej: ABRIL 2026">
+      <input type="text" id="cfg-mes" placeholder="Ej: MAYO 2026">
       <div class="grid2">
         <div><label>Dias del mes</label><input type="number" id="cfg-dias" min="28" max="31"></div>
         <div><label>Inicio semana (0=Dom,1=Lun)</label><input type="number" id="cfg-inicio" min="0" max="6"></div>
       </div>
-      <button class="btn btn-blue" onclick="guardarConfigMes()">Guardar</button>
+      <button class="btn btn-blue" onclick="guardarConfigMes()">Guardar configuracion</button>
     </div>
     <div class="card">
       <h3>Tipos de asistencia</h3>
@@ -213,108 +234,100 @@ td.col-fixed{text-align:left;padding-left:5px;background:#f8fafc;font-size:11px;
         </div>
       </div>
       <button class="btn btn-blue" onclick="agregarTipo()">Agregar tipo</button>
-      <div id="lista-tipos" style="margin-top:.6rem;"></div>
+      <div id="lista-tipos" style="margin-top:.75rem;"></div>
     </div>
   </div>
 
   <div id="tab-export" style="display:none;">
     <div class="card">
-      <p style="font-size:14px;color:#64748b;margin-bottom:.9rem;">Descarga la planilla en CSV para Excel.</p>
-      <button class="btn btn-blue" onclick="exportarCSV()">Descargar CSV</button>
+      <p style="font-size:14px;color:#64748b;margin-bottom:1rem;line-height:1.5;">Descarga la planilla completa del mes en formato CSV para abrir en Excel.</p>
+      <button class="btn btn-blue" onclick="exportarCSV()">Descargar CSV para Excel</button>
     </div>
     <div class="card">
-      <p style="font-size:13px;color:#64748b;margin-bottom:.9rem;">Reiniciar registros del mes.</p>
-      <button class="btn btn-red" onclick="reiniciarMes()">Reiniciar mes</button>
+      <p style="font-size:13px;color:#64748b;margin-bottom:1rem;line-height:1.5;">Archiva el mes actual y reinicia los registros. El personal no se borra.</p>
+      <button class="btn btn-red" onclick="reiniciarMes()">Archivar y reiniciar mes</button>
     </div>
   </div>
 </div>
 
 </div>
 
-
-
 <script>
-const API_URL = 'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-const ADMIN_PASS = 'Admin2026';
-const DIAS_SEM = ['D','L','M','M','J','V','S'];
+const API_URL='https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
+const ADMIN_PASS='Admin2026';
+const DIAS_SEM=['D','L','M','M','J','V','S'];
 
-let cfg = JSON.parse(localStorage.getItem('grd_cfg') || 'null') || {
-  mes:'ABRIL 2026', dias:30, inicioSem:1,
+let cfg=JSON.parse(localStorage.getItem('grd_cfg')||'null')||{
+  mes:'ABRIL 2026',dias:30,inicioSem:1,
   tipos:[
     {cod:'G',desc:'Guardia',color:'#10b981'},
     {cod:'M/T',desc:'Manana y Tarde',color:'#3b82f6'},
-    {cod:'M',desc:'Solo Manana',color:'#f59e0b'},
-    {cod:'T',desc:'Solo Tarde',color:'#8b5cf6'},
-    {cod:'LC',desc:'Licencia',color:'#ef4444'},
-    {cod:'VAC',desc:'Vacaciones',color:'#ec4899'},
+    {cod:'12HS',desc:'12 horas',color:'#f59e0b'},
+    {cod:'L/O',desc:'Licencia Ord.',color:'#8b5cf6'},
+    {cod:'L/M',desc:'Licencia Med.',color:'#ef4444'},
+    {cod:'L/F',desc:'Lic. Fallecimiento',color:'#ec4899'},
+    {cod:'L/E',desc:'Lic. Estudios',color:'#6b7280'},
   ]
 };
-let personal = [];
-let registros = {};
-let usuarioActual = null;
-let tipoSel = null;
+let personal=[];
+let registros={};
+let usuarioActual=null;
+let tipoSel=null;
 
-function svLocal(k){ if(k==='cfg') localStorage.setItem('grd_cfg', JSON.stringify(cfg)); }
+function svLocal(k){if(k==='cfg')localStorage.setItem('grd_cfg',JSON.stringify(cfg));}
 
 async function apiGet(tipo){
   try{
-    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
+    const url=tipo?API_URL+'?tipo='+tipo:API_URL;
+    const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
     return await r.json();
-  } catch(e){ console.error('Error GET:', e); return []; }
+  }catch(e){console.error('Error GET:',e);return[];}
 }
 
-async function apiPost(data, tipo){
+async function apiPost(data,tipo){
   try{
-    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data), signal: AbortSignal.timeout(30000) });
-  } catch(e){ console.error('Error POST:', e); }
+    const url=tipo?API_URL+'?tipo='+tipo:API_URL;
+    await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(30000)});
+  }catch(e){console.error('Error POST:',e);}
 }
 
-async function apiDelete(data, tipo){
+async function apiDelete(data,tipo){
   try{
-    const url = tipo ? API_URL+'?tipo='+tipo : API_URL;
-    await fetch(url, { method:'DELETE', headers:{'Content-Type':'application/json'}, body: JSON.stringify(data), signal: AbortSignal.timeout(30000) });
-  } catch(e){ console.error('Error DELETE:', e); }
+    const url=tipo?API_URL+'?tipo='+tipo:API_URL;
+    await fetch(url,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(30000)});
+  }catch(e){console.error('Error DELETE:',e);}
 }
 
 async function cargarPersonal(){
-  const data = await apiGet('personal');
-  personal = data.filter(d => d.nombre);
-  personal.sort((a,b) => (a.orden||0) - (b.orden||0));
+  const data=await apiGet('personal');
+  personal=data.filter(d=>d.nombre);
+  personal.sort((a,b)=>(a.orden||0)-(b.orden||0));
 }
 
 async function cargarConfig(){
-  const data = await apiGet('config');
-  const cfgAzure = data.find(d => d.id === 'configuracion');
-  if(cfgAzure && cfgAzure.tipos){
-    cfg.tipos = cfgAzure.tipos;
-  }
-  if(cfgAzure && cfgAzure.mes) cfg.mes = cfgAzure.mes;
-  if(cfgAzure && cfgAzure.dias) cfg.dias = cfgAzure.dias;
-  if(cfgAzure && cfgAzure.inicioSem !== undefined) cfg.inicioSem = cfgAzure.inicioSem;
+  const data=await apiGet('config');
+  const cfgAzure=data.find(d=>d.id==='configuracion');
+  if(cfgAzure&&cfgAzure.tipos)cfg.tipos=cfgAzure.tipos;
+  if(cfgAzure&&cfgAzure.mes)cfg.mes=cfgAzure.mes;
+  if(cfgAzure&&cfgAzure.dias)cfg.dias=cfgAzure.dias;
+  if(cfgAzure&&cfgAzure.inicioSem!==undefined)cfg.inicioSem=cfgAzure.inicioSem;
 }
 
 async function cargarRegistros(){
-  const data = await apiGet();
-  registros = {};
-  data.forEach(d => {
-    if(d.nombre && d.dia && d.tipo){
-      if(!registros[d.nombre]) registros[d.nombre]={};
+  const data=await apiGet();
+  registros={};
+  data.forEach(d=>{
+    if(d.nombre&&d.dia&&d.tipo){
+      if(!registros[d.nombre])registros[d.nombre]={};
       registros[d.nombre][d.dia]=d.tipo;
     }
   });
 }
 
-function togglePass(id, btn){
+function togglePass(id,btn){
   const inp=document.getElementById(id);
-  if(inp.type==='password'){
-    inp.type='text';
-    btn.style.color='#3b82f6';
-  } else {
-    inp.type='password';
-    btn.style.color='#94a3b8';
-  }
+  if(inp.type==='password'){inp.type='text';btn.style.color='#3b82f6';}
+  else{inp.type='password';btn.style.color='#94a3b8';}
 }
 
 function goTo(id){
@@ -337,7 +350,7 @@ async function iniciarLogin(){
 }
 
 function llenarSel(id,arr,vFn,lFn,empty){
-  const s=document.getElementById(id); if(!s) return;
+  const s=document.getElementById(id);if(!s)return;
   s.innerHTML='<option value="">'+(empty||'Selecciona')+'</option>';
   arr.forEach((x,i)=>{const o=document.createElement('option');o.value=vFn(x,i);o.textContent=lFn(x,i);s.appendChild(o);});
 }
@@ -350,9 +363,9 @@ function doLogin(){
   const pass=document.getElementById('inp-pass').value;
   const err=document.getElementById('login-err');
   if(idx===''){err.textContent='Selecciona tu nombre.';err.style.display='block';return;}
-  if(!pass){err.textContent='Ingresa tu contrasena.';err.style.display='block';return;}
+  if(!pass){err.textContent='Ingresa tu contraseña.';err.style.display='block';return;}
   const p=personal[idx];
-  if(p.pass!==pass){err.textContent='Contrasena incorrecta.';err.style.display='block';return;}
+  if(p.pass!==pass){err.textContent='Contraseña incorrecta. Consulta al administrador.';err.style.display='block';return;}
   err.style.display='none';
   document.getElementById('inp-pass').value='';
   usuarioActual={idx:parseInt(idx),...p};
@@ -360,7 +373,7 @@ function doLogin(){
   const yaReg=registros[p.nombre]&&registros[p.nombre][dia];
   document.getElementById('reg-title').textContent='Hola, '+p.nombre.split(',')[0];
   document.getElementById('reg-info').innerHTML=yaReg
-    ?'<div class="alert alert-ok">Ya registraste <strong>'+yaReg+'</strong> hoy dia '+dia+'.</div>'
+    ?'<div class="alert alert-ok">Ya registraste <strong translate="no">'+yaReg+'</strong> hoy, dia '+dia+'.</div>'
     :'<div style="font-size:13px;color:#64748b;">Hoy es el dia <strong>'+dia+'</strong> de '+cfg.mes+'</div>';
   renderTiposGrid();
   document.getElementById('rango-desde').value='';
@@ -369,7 +382,7 @@ function doLogin(){
 }
 
 function renderTiposGrid(){
-  const g=document.getElementById('tipos-grid'); g.innerHTML='';
+  const g=document.getElementById('tipos-grid');g.innerHTML='';
   cfg.tipos.forEach(t=>{
     const d=document.createElement('div');
     d.className='tipo-btn';
@@ -391,76 +404,71 @@ async function doRegistro(){
   const hasta=isNaN(hv)?desde:hv;
   if(desde>hasta){err.textContent='Desde no puede ser mayor que hasta.';err.style.display='block';return;}
   for(let d=desde;d<=hasta;d++){
-    if(!registros[usuarioActual.nombre]) registros[usuarioActual.nombre]={};
+    if(!registros[usuarioActual.nombre])registros[usuarioActual.nombre]={};
     registros[usuarioActual.nombre][d]=tipoSel;
-    await apiPost({ id: usuarioActual.nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d, nombre: usuarioActual.nombre, dia: d, tipo: tipoSel, mes: cfg.mes });
+    await apiPost({id:usuarioActual.nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d,nombre:usuarioActual.nombre,dia:d,tipo:tipoSel,mes:cfg.mes});
   }
   const rango=desde===hasta?'Dia '+desde:'Dias '+desde+' al '+hasta;
-  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' - '+tipoSel+'<br>'+cfg.mes;
+  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' &rarr; <span translate="no">'+tipoSel+'</span><br><span style="font-size:12px;">'+cfg.mes+'</span>';
   goTo('sc-ok');
 }
 
 async function doAdminLogin(){
   const pass=document.getElementById('inp-admin-pass').value;
   const err=document.getElementById('admin-err');
-  if(pass!==ADMIN_PASS){err.textContent='Contrasena incorrecta.';err.style.display='block';return;}
+  if(pass!==ADMIN_PASS){err.textContent='Contraseña incorrecta.';err.style.display='block';return;}
   err.style.display='none';
   document.getElementById('inp-admin-pass').value='';
   goTo('sc-admin');
   await cargarConfig();
   await cargarPersonal();
   await cargarRegistros();
-  // Verificar si cambio el mes
-  const mesActual = new Date().toLocaleString('es-AR', {month:'long', year:'numeric'}).toUpperCase();
-  const mesCfg = cfg.mes.toUpperCase();
-  if(!mesCfg.includes(new Date().toLocaleString('es-AR', {month:'long'}).toUpperCase())){
+  const mesActual=new Date().toLocaleString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
+  if(!cfg.mes.toUpperCase().includes(new Date().toLocaleString('es-AR',{month:'long'}).toUpperCase())){
     setTimeout(()=>{
       if(confirm('Atencion: El mes configurado es "'+cfg.mes+'" pero estamos en '+mesActual+'. Queres actualizar el mes?')){
-        goTo('sc-admin');
-        switchTab('tab-config', document.querySelector('.tab'));
+        switchTab('tab-config',document.querySelectorAll('.tab')[3]);
       }
-    }, 500);
+    },500);
   }
   renderAll();
 }
 
 function switchTab(id,el){
   document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
-  el.classList.add('active');
+  if(el)el.classList.add('active');
   ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-export'].forEach(t=>{
     document.getElementById(t).style.display=t===id?'block':'none';
   });
-  if(id==='tab-planilla') renderPlanilla();
-  if(id==='tab-personal') renderPersonal();
-  if(id==='tab-rangos') renderRangos();
-  if(id==='tab-config') renderConfig();
+  if(id==='tab-planilla')renderPlanilla();
+  if(id==='tab-personal')renderPersonal();
+  if(id==='tab-rangos')renderRangos();
+  if(id==='tab-config')renderConfig();
 }
 
 function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();}
 
 function renderPlanilla(){
   const c=document.getElementById('planilla-container');
-  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem 0;">Sin personal.</p>';return;}
+  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal registrado.</p>';return;}
   const inicio=parseInt(cfg.inicioSem)||0;
-  let h='<table><thead><tr>';
-  h+='<th class="col-fixed" style="min-width:110px;">Apellido y Nombre</th>';
+  let h='<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
   for(let d=1;d<=cfg.dias;d++){
     const semIdx=(inicio+d-1)%7;
     const ds=DIAS_SEM[semIdx];
-    const esFinde=(semIdx===0||semIdx===6);
-    h+='<th style="min-width:22px;'+(esFinde?'color:#ef4444;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
+    const esFinde=semIdx===0||semIdx===6;
+    h+='<th style="min-width:24px;'+(esFinde?'color:#ef4444;background:#fff5f5;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
   }
   h+='</tr></thead><tbody>';
   personal.forEach(p=>{
-    h+='<tr>';
-    h+='<td class="col-fixed" style="font-weight:600;">'+p.nombre+'</td>';
+    h+='<tr><td class="col-fixed">'+p.nombre+'</td>';
     for(let d=1;d<=cfg.dias;d++){
       const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
       const t=cfg.tipos.find(x=>x.cod===v);
       const col=t?t.color:'';
       const semIdx=(inicio+d-1)%7;
-      const esFinde=(semIdx===0||semIdx===6);
-      h+='<td style="color:'+col+';font-weight:'+(v?'700':'400')+';background:'+(esFinde?'#f8fafc':'')+';">'+v+'</td>';
+      const esFinde=semIdx===0||semIdx===6;
+      h+='<td style="color:'+col+';font-weight:'+(v?'700':'400')+';background:'+(esFinde?'#fff5f5':'')+';"><span translate="no">'+v+'</span></td>';
     }
     h+='</tr>';
   });
@@ -472,17 +480,17 @@ function renderPersonal(){
   const c=document.getElementById('lista-personal');
   if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin personal.</p>';return;}
   c.innerHTML=personal.map((p,i)=>
-    '<div class="row-between" style="flex-wrap:wrap;gap:4px;">'+
+    '<div class="row-between">'+
     '<div style="flex:1;min-width:0;">'+
-    '<div style="font-size:13px;font-weight:600;">'+p.nombre+'</div>'+
-    '<div style="font-size:11px;color:#64748b;">'+p.grado+' - L.P.: '+p.lp+'</div>'+
-    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip">'+p.pass+'</span></div>'+
+    '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.nombre+'</div>'+
+    '<div style="font-size:11px;color:#64748b;">'+p.grado+' · L.P.: '+p.lp+'</div>'+
+    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">'+p.pass+'</span></div>'+
     '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center;margin-left:4px;">'+
-    '<span style="cursor:pointer;font-size:16px;'+(i===0?'opacity:.3;pointer-events:none;':'')+'\" onclick="moverPersona('+i+',-1)">↑</span>'+
-    '<span style="cursor:pointer;font-size:16px;'+(i===personal.length-1?'opacity:.3;pointer-events:none;':'')+'\" onclick="moverPersona('+i+',1)">↓</span>'+
-    '<span style="cursor:pointer;color:#3b82f6;font-size:12px;" onclick="editarPersona('+i+')">Editar</span>'+
-    '<span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarPersona('+i+')">Quitar</span>'+
+    '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">'+
+    '<span style="cursor:pointer;font-size:18px;'+(i===0?'opacity:.25;pointer-events:none;':'')+'" onclick="moverPersona('+i+',-1)">↑</span>'+
+    '<span style="cursor:pointer;font-size:18px;'+(i===personal.length-1?'opacity:.25;pointer-events:none;':'')+'" onclick="moverPersona('+i+',1)">↓</span>'+
+    '<span style="cursor:pointer;color:#3b82f6;font-size:12px;font-weight:600;" onclick="editarPersona('+i+')">Editar</span>'+
+    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarPersona('+i+')">Quitar</span>'+
     '</div></div>'
   ).join('');
 }
@@ -496,48 +504,44 @@ async function agregarPersona(){
   if(personal.find(p=>p.nombre===nombre)){alert('Ya existe esa persona.');return;}
   const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
   const orden=personal.length;
-  await apiPost({id, grado, lp, nombre, pass, orden}, 'personal');
-  personal.push({id, grado, lp, nombre, pass, orden});
+  await apiPost({id,grado,lp,nombre,pass,orden},'personal');
+  personal.push({id,grado,lp,nombre,pass,orden});
   ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(i=>document.getElementById(i).value='');
-  renderPersonal(); renderPlanilla(); llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
+  renderPersonal();renderPlanilla();llenarPersonas('rango-persona');llenarPersonas('celda-persona');
 }
-
 
 async function editarPersona(i){
   const p=personal[i];
-  const nuevoNombre=prompt('Apellido y Nombre (actual: '+p.nombre+'):', p.nombre);
-  if(nuevoNombre===null) return;
-  const nuevoPass=prompt('Contrasena (actual: '+p.pass+'):', p.pass);
-  if(nuevoPass===null) return;
+  const nuevoNombre=prompt('Apellido y Nombre (actual: '+p.nombre+'):',p.nombre);
+  if(nuevoNombre===null)return;
+  const nuevoPass=prompt('Contraseña (actual: '+p.pass+'):',p.pass);
+  if(nuevoPass===null)return;
   if(!nuevoNombre.trim()||!nuevoPass.trim()){alert('Ningun campo puede estar vacio.');return;}
-  personal[i]={...personal[i], nombre:nuevoNombre.trim(), pass:nuevoPass.trim()};
-  await apiPost({...personal[i]}, 'personal');
-  renderPersonal();
-  renderPlanilla();
+  personal[i]={...personal[i],nombre:nuevoNombre.trim(),pass:nuevoPass.trim()};
+  await apiPost({...personal[i]},'personal');
+  renderPersonal();renderPlanilla();
 }
 
-async function moverPersona(i, dir){
-  const j = i + dir;
-  if(j<0||j>=personal.length) return;
-  [personal[i], personal[j]] = [personal[j], personal[i]];
-  personal[i].orden = i;
-  personal[j].orden = j;
-  await apiPost({...personal[i]}, 'personal');
-  await apiPost({...personal[j]}, 'personal');
-  renderPersonal();
-  renderPlanilla();
+async function moverPersona(i,dir){
+  const j=i+dir;
+  if(j<0||j>=personal.length)return;
+  [personal[i],personal[j]]=[personal[j],personal[i]];
+  personal[i].orden=i;personal[j].orden=j;
+  await apiPost({...personal[i]},'personal');
+  await apiPost({...personal[j]},'personal');
+  renderPersonal();renderPlanilla();
 }
 
 async function eliminarPersona(i){
-  if(!confirm('Quitar a '+personal[i].nombre+'?')) return;
-  await apiDelete({id: personal[i].id}, 'personal');
+  if(!confirm('Quitar a '+personal[i].nombre+'?'))return;
+  await apiDelete({id:personal[i].id},'personal');
   personal.splice(i,1);
-  renderPersonal(); renderPlanilla();
+  renderPersonal();renderPlanilla();
 }
 
 function renderRangos(){
-  llenarPersonas('rango-persona'); llenarPersonas('celda-persona');
-  llenarTipos('rango-admin-tipo'); llenarTipos('celda-tipo');
+  llenarPersonas('rango-persona');llenarPersonas('celda-persona');
+  llenarTipos('rango-admin-tipo');llenarTipos('celda-tipo');
 }
 
 async function aplicarRangoAdmin(){
@@ -548,11 +552,11 @@ async function aplicarRangoAdmin(){
   if(!persona||!tipo||isNaN(desde)||isNaN(hasta)){alert('Completa todos los campos.');return;}
   if(desde>hasta){alert('Desde no puede ser mayor que hasta.');return;}
   for(let d=desde;d<=hasta;d++){
-    if(!registros[persona]) registros[persona]={};
+    if(!registros[persona])registros[persona]={};
     registros[persona][d]=tipo;
-    await apiPost({ id: persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d, nombre: persona, dia: d, tipo, mes: cfg.mes });
+    await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d,nombre:persona,dia:d,tipo,mes:cfg.mes});
   }
-  alert('Aplicado: '+persona+', dias '+desde+' al '+hasta+' - '+tipo);
+  alert('Aplicado: '+persona+', dias '+desde+' al '+hasta+' → '+tipo);
   renderPlanilla();
 }
 
@@ -561,9 +565,9 @@ async function editarCelda(){
   const dia=parseInt(document.getElementById('celda-dia').value);
   const tipo=document.getElementById('celda-tipo').value;
   if(!persona||isNaN(dia)||!tipo){alert('Completa todos los campos.');return;}
-  if(!registros[persona]) registros[persona]={};
+  if(!registros[persona])registros[persona]={};
   registros[persona][dia]=tipo;
-  await apiPost({ id: persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia, nombre: persona, dia, tipo, mes: cfg.mes });
+  await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,nombre:persona,dia,tipo,mes:cfg.mes});
   alert('Celda actualizada.');
   renderPlanilla();
 }
@@ -575,8 +579,8 @@ function renderConfig(){
   const lt=document.getElementById('lista-tipos');
   lt.innerHTML=cfg.tipos.map((t,i)=>
     '<div class="row-between">'+
-    '<span style="font-size:13px;"><span class="dot" style="background:'+t.color+';"></span><strong>'+t.cod+'</strong> - '+t.desc+'</span>'+
-    '<span style="cursor:pointer;color:#ef4444;font-size:12px;" onclick="eliminarTipo('+i+')">Quitar</span>'+
+    '<span style="font-size:13px;display:flex;align-items:center;"><span class="dot" style="background:'+t.color+';"></span><strong translate="no">'+t.cod+'</strong>&nbsp;–&nbsp;<span translate="no">'+t.desc+'</span></span>'+
+    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTipo('+i+')">Quitar</span>'+
     '</div>'
   ).join('');
 }
@@ -586,7 +590,7 @@ async function guardarConfigMes(){
   cfg.dias=parseInt(document.getElementById('cfg-dias').value)||30;
   cfg.inicioSem=parseInt(document.getElementById('cfg-inicio').value)||0;
   svLocal('cfg');
-  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
+  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
   alert('Configuracion guardada para todos.');
   renderPlanilla();
 }
@@ -597,27 +601,27 @@ async function agregarTipo(){
   const color=document.getElementById('cfg-tipo-color').value;
   if(!cod||!desc){alert('Completa codigo y descripcion.');return;}
   if(cfg.tipos.find(t=>t.cod===cod)){alert('Ese codigo ya existe.');return;}
-  cfg.tipos.push({cod,desc,color}); svLocal('cfg');
+  cfg.tipos.push({cod,desc,color});svLocal('cfg');
   document.getElementById('cfg-tipo-cod').value='';
   document.getElementById('cfg-tipo-desc').value='';
-  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
+  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
   renderConfig();
 }
 
 async function eliminarTipo(i){
-  if(!confirm('Quitar el tipo "'+cfg.tipos[i].cod+'"?')) return;
-  cfg.tipos.splice(i,1); svLocal('cfg');
-  await apiPost({id:'configuracion', mes:cfg.mes, dias:cfg.dias, inicioSem:cfg.inicioSem, tipos:cfg.tipos}, 'config');
+  if(!confirm('Quitar el tipo "'+cfg.tipos[i].cod+'"?'))return;
+  cfg.tipos.splice(i,1);svLocal('cfg');
+  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
   renderConfig();
 }
 
 function exportarCSV(){
   let csv='Apellido y Nombre';
-  for(let d=1;d<=cfg.dias;d++) csv+=','+d;
+  for(let d=1;d<=cfg.dias;d++)csv+=','+d;
   csv+='\n';
   personal.forEach(p=>{
     csv+='"'+p.nombre+'"';
-    for(let d=1;d<=cfg.dias;d++) csv+=','+(registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'');
+    for(let d=1;d<=cfg.dias;d++)csv+=','+(registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'');
     csv+='\n';
   });
   const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
@@ -628,22 +632,16 @@ function exportarCSV(){
 }
 
 async function reiniciarMes(){
-  if(!confirm('Reiniciar todos los registros del mes? Los datos se archivaran antes de borrarse.')) return;
-  
-  // Archivar mes actual
-  const mesArchivo = {
-    id: cfg.mes.replace(/ /g,'_')+'_'+Date.now(),
-    mes: cfg.mes,
-    fecha: new Date().toISOString(),
-    registros: registros,
-    personal: personal.map(p=>({nombre:p.nombre, grado:p.grado, lp:p.lp}))
+  if(!confirm('Archivar el mes "'+cfg.mes+'" y reiniciar los registros?'))return;
+  const mesArchivo={
+    id:cfg.mes.replace(/ /g,'_')+'_'+Date.now(),
+    mes:cfg.mes,fecha:new Date().toISOString(),
+    registros:registros,
+    personal:personal.map(p=>({nombre:p.nombre,grado:p.grado,lp:p.lp}))
   };
-  await apiPost(mesArchivo, 'archivo');
-  
-  // Limpiar registros en Azure
-  await apiPost({}, 'limpiar');
-  
-  registros = {};
+  await apiPost(mesArchivo,'archivo');
+  await apiPost({},'limpiar');
+  registros={};
   alert('Mes archivado y reiniciado correctamente.');
   renderPlanilla();
 }
