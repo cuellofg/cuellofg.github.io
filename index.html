@@ -564,7 +564,16 @@ async function editarCelda(){
   const persona=document.getElementById('celda-persona').value;
   const dia=parseInt(document.getElementById('celda-dia').value);
   const tipo=document.getElementById('celda-tipo').value;
-  if(!persona||isNaN(dia)||!tipo){alert('Completa todos los campos.');return;}
+  if(!persona||isNaN(dia)){alert('Selecciona persona y dia.');return;}
+  if(!tipo){
+    // Borrar celda
+    if(!confirm('Borrar el registro de '+persona+' del dia '+dia+'?'))return;
+    if(registros[persona])delete registros[persona][dia];
+    await apiDelete({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,nombre:persona},'registro');
+    alert('Registro borrado.');
+    renderPlanilla();
+    return;
+  }
   if(!registros[persona])registros[persona]={};
   registros[persona][dia]=tipo;
   await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,nombre:persona,dia,tipo,mes:cfg.mes});
