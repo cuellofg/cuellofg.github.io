@@ -20,7 +20,7 @@ let usuarioActual=null;
 let tipoSel=null;
 
 // Rate limiting client-side
-const rateLimiter={calls:{},limit:10,window:60000};
+const rateLimiter={calls:{},limit:10,window:1200000};
 function checkRateLimit(key){
   const now=Date.now();
   if(!rateLimiter.calls[key])rateLimiter.calls[key]=[];
