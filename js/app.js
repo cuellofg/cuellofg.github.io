@@ -125,9 +125,31 @@ function llenarTipos(id){llenarSel(id,cfg.tipos,t=>t.cod,t=>t.cod+' - '+t.desc);
 function llenarNombresLogin(){llenarSel('sel-nombre',personal,(_,i)=>i,p=>p.nombre,'Tu nombre');}
 
 // Login con proteccion de intentos fallidos
-const loginAttempts={count:0,blocked:false,timer:null};
+const BLOQUEO_MINUTOS = 20;
+const BLOQUEO_MS = BLOQUEO_MINUTOS * 60 * 1000;
+const MAX_INTENTOS = 5;
+
+function getBloqueo(key){
+  const data=JSON.parse(localStorage.getItem(key)||'null');
+  if(!data)return{count:0,blocked:false};
+  if(data.blocked&&Date.now()>data.until){
+    localStorage.removeItem(key);
+    return{count:0,blocked:false};
+  }
+  return data;
+}
+
+function setBloqueo(key,count,blocked){
+  localStorage.setItem(key,JSON.stringify({count,blocked,until:blocked?Date.now()+BLOQUEO_MS:0}));
+}
+
 function doLogin(){
-  if(loginAttempts.blocked){alert('Demasiados intentos fallidos. Espera 1 minuto.');return;}
+  const bl=getBloqueo('login_block');
+  if(bl.blocked){
+    const restante=Math.ceil((JSON.parse(localStorage.getItem('login_block')).until-Date.now())/60000);
+    alert('Demasiados intentos fallidos. Espera '+restante+' minuto(s).');return;
+  }
+
   const idx=document.getElementById('sel-nombre').value;
   const pass=document.getElementById('inp-pass').value;
   const err=document.getElementById('login-err');
@@ -135,16 +157,14 @@ function doLogin(){
   if(!pass){err.textContent='Ingresa tu contraseña.';err.style.display='block';return;}
   const p=personal[idx];
   if(p.pass!==pass){
-    loginAttempts.count++;
-    if(loginAttempts.count>=5){
-      loginAttempts.blocked=true;
-      loginAttempts.timer=setTimeout(()=>{loginAttempts.count=0;loginAttempts.blocked=false;},60000);
-    }
-    err.textContent='Contraseña incorrecta. Intento '+loginAttempts.count+'/5.';
+    const nuevoCount=bl.count+1;
+    const bloqueado=nuevoCount>=MAX_INTENTOS;
+    setBloqueo('login_block',nuevoCount,bloqueado);
+    err.textContent=bloqueado?'Cuenta bloqueada por '+BLOQUEO_MINUTOS+' minutos.':'Contraseña incorrecta. Intento '+nuevoCount+'/'+MAX_INTENTOS+'.';
     err.style.display='block';
     return;
   }
-  loginAttempts.count=0;
+ localStorage.removeItem('login_block');
   err.style.display='none';
   document.getElementById('inp-pass').value='';
   usuarioActual={idx:parseInt(idx),...p};
@@ -193,22 +213,23 @@ async function doRegistro(){
   goTo('sc-ok');
 }
 
-const adminAttempts={count:0,blocked:false};
 async function doAdminLogin(){
-  if(adminAttempts.blocked){alert('Demasiados intentos. Espera 1 minuto.');return;}
+  const bl=getBloqueo('admin_block');
+  if(bl.blocked){
+    const restante=Math.ceil((JSON.parse(localStorage.getItem('admin_block')).until-Date.now())/60000);
+    alert('Demasiados intentos. Espera '+restante+' minuto(s).');return;
+  }
   const pass=document.getElementById('inp-admin-pass').value;
   const err=document.getElementById('admin-err');
   if(pass!==ADMIN_PASS){
-    adminAttempts.count++;
-    if(adminAttempts.count>=5){
-      adminAttempts.blocked=true;
-      setTimeout(()=>{adminAttempts.count=0;adminAttempts.blocked=false;},60000);
-    }
-    err.textContent='Contraseña incorrecta. Intento '+adminAttempts.count+'/5.';
+   const nuevoCount=bl.count+1;
+    const bloqueado=nuevoCount>=MAX_INTENTOS;
+    setBloqueo('admin_block',nuevoCount,bloqueado);
+    err.textContent=bloqueado?'Cuenta bloqueada por '+BLOQUEO_MINUTOS+' minutos.':'Contraseña incorrecta. Intento '+nuevoCount+'/'+MAX_INTENTOS+'.';
     err.style.display='block';
     return;
   }
-  adminAttempts.count=0;
+  localStorage.removeItem('admin_block');
   err.style.display='none';
   document.getElementById('inp-admin-pass').value='';
   goTo('sc-admin');
