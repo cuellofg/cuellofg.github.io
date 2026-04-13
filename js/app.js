@@ -1,595 +1,1058 @@
-const API_URL='https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-const ADMIN_PASS='Admin2026';
-const DIAS_SEM=['D','L','M','M','J','V','S'];
+const API_URL =
+    'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
+const ADMIN_PASS = 'Admin2026';
+const DIAS_SEM = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
-let cfg=JSON.parse(localStorage.getItem('grd_cfg')||'null')||{
-  mes:'ABRIL 2026',dias:30,inicioSem:1,
-  tipos:[
-    {cod:'G',desc:'Guardia',color:'#10b981'},
-    {cod:'M/T',desc:'Manana y Tarde',color:'#3b82f6'},
-    {cod:'12HS',desc:'12 horas',color:'#f59e0b'},
-    {cod:'L/O',desc:'Licencia Ord.',color:'#8b5cf6'},
-    {cod:'L/M',desc:'Licencia Med.',color:'#ef4444'},
-    {cod:'L/F',desc:'Lic. Fallecimiento',color:'#ec4899'},
-    {cod:'L/E',desc:'Lic. Estudios',color:'#6b7280'},
-  ]
+let cfg = JSON.parse(localStorage.getItem('grd_cfg') || 'null') || {
+    mes: 'ABRIL 2026',
+    dias: 30,
+    inicioSem: 1,
+    tipos: [
+        { cod: 'G', desc: 'Guardia', color: '#10b981' },
+        { cod: 'M/T', desc: 'Manana y Tarde', color: '#3b82f6' },
+        { cod: '12HS', desc: '12 horas', color: '#f59e0b' },
+        { cod: 'L/O', desc: 'Licencia Ord.', color: '#8b5cf6' },
+        { cod: 'L/M', desc: 'Licencia Med.', color: '#ef4444' },
+        { cod: 'L/F', desc: 'Lic. Fallecimiento', color: '#ec4899' },
+        { cod: 'L/E', desc: 'Lic. Estudios', color: '#6b7280' },
+    ],
 };
-let personal=[];
-let registros={};
-let turnos=[];
-let usuarioActual=null;
-let tipoSel=null;
+let personal = [];
+let registros = {};
+let turnos = [];
+let usuarioActual = null;
+let tipoSel = null;
 
 // Rate limiting client-side
-const rateLimiter={calls:{},limit:100,window:60000};
-function checkRateLimit(key){
-  const now=Date.now();
-  if(!rateLimiter.calls[key])rateLimiter.calls[key]=[];
-  rateLimiter.calls[key]=rateLimiter.calls[key].filter(t=>now-t<rateLimiter.window);
-  if(rateLimiter.calls[key].length>=rateLimiter.limit)return false;
-  rateLimiter.calls[key].push(now);
-  return true;
+const rateLimiter = { calls: {}, limit: 100, window: 60000 };
+function checkRateLimit(key) {
+    const now = Date.now();
+    if (!rateLimiter.calls[key]) rateLimiter.calls[key] = [];
+    rateLimiter.calls[key] = rateLimiter.calls[key].filter(
+        (t) => now - t < rateLimiter.window,
+    );
+    if (rateLimiter.calls[key].length >= rateLimiter.limit) return false;
+    rateLimiter.calls[key].push(now);
+    return true;
 }
 
 // Input sanitization
-function sanitize(str){
-  if(typeof str!=='string')return '';
-  return str.replace(/[<>\"'&]/g,'').trim().slice(0,200);
+function sanitize(str) {
+    if (typeof str !== 'string') return '';
+    return str
+        .replace(/[<>\"'&]/g, '')
+        .trim()
+        .slice(0, 200);
 }
 
-function svLocal(k){if(k==='cfg')localStorage.setItem('grd_cfg',JSON.stringify(cfg));}
-
-async function apiGet(tipo){
-  try{
-    const url=tipo?API_URL+'?tipo='+encodeURIComponent(tipo):API_URL;
-    const r=await fetch(url,{signal:AbortSignal.timeout(30000)});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    return await r.json();
-  }catch(e){console.error('Error GET:',e);return[];}
+function svLocal(k) {
+    if (k === 'cfg') localStorage.setItem('grd_cfg', JSON.stringify(cfg));
 }
 
-async function apiPost(data,tipo){
-  if(!checkRateLimit('post')){alert('Demasiadas solicitudes. Espera un momento.');return;}
-  try{
-    const url=tipo?API_URL+'?tipo='+encodeURIComponent(tipo):API_URL;
-    const r=await fetch(url,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(30000)});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-  }catch(e){console.error('Error POST:',e);}
-}
-
-async function apiDelete(data,tipo){
-  try{
-    const url=tipo?API_URL+'?tipo='+encodeURIComponent(tipo):API_URL;
-    const r=await fetch(url,{method:'DELETE',headers:{'Content-Type':'application/json'},body:JSON.stringify(data),signal:AbortSignal.timeout(30000)});
-    if(!r.ok)throw new Error('HTTP '+r.status);
-  }catch(e){console.error('Error DELETE:',e);}
-}
-
-async function cargarPersonal(){
-  const data=await apiGet('personal');
-  personal=data.filter(d=>d.nombre);
-  personal.sort((a,b)=>(a.orden||0)-(b.orden||0));
-}
-
-async function cargarConfig(){
-  const data=await apiGet('config');
-  const cfgAzure=data.find(d=>d.id==='configuracion');
-  if(cfgAzure&&cfgAzure.tipos)cfg.tipos=cfgAzure.tipos;
-  if(cfgAzure&&cfgAzure.mes)cfg.mes=cfgAzure.mes;
-  if(cfgAzure&&cfgAzure.dias)cfg.dias=cfgAzure.dias;
-  if(cfgAzure&&cfgAzure.inicioSem!==undefined)cfg.inicioSem=cfgAzure.inicioSem;
-}
-
-async function cargarRegistros(){
-  const data=await apiGet();
-  registros={};
-  data.forEach(d=>{
-    if(d.nombre&&d.dia&&d.tipo){
-      if(!registros[d.nombre])registros[d.nombre]={};
-      registros[d.nombre][d.dia]=d.tipo;
+async function apiGet(tipo) {
+    try {
+        const url = tipo
+            ? API_URL + '?tipo=' + encodeURIComponent(tipo)
+            : API_URL;
+        const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+        return await r.json();
+    } catch (e) {
+        console.error('Error GET:', e);
+        return [];
     }
-  });
 }
 
-function togglePass(id,btn){
-  const inp=document.getElementById(id);
-  if(inp.type==='password'){inp.type='text';btn.style.color='#3b82f6';}
-  else{inp.type='password';btn.style.color='#94a3b8';}
+async function apiPost(data, tipo) {
+    if (!checkRateLimit('post')) {
+        alert('Demasiadas solicitudes. Espera un momento.');
+        return;
+    }
+    try {
+        const url = tipo
+            ? API_URL + '?tipo=' + encodeURIComponent(tipo)
+            : API_URL;
+        const r = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            signal: AbortSignal.timeout(30000),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (e) {
+        console.error('Error POST:', e);
+    }
 }
 
-function goTo(id){
-  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-  document.getElementById(id).classList.add('active');
-  tipoSel=null;
-  document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('sel'));
-  document.getElementById('home-mes').textContent=cfg.mes;
+async function apiDelete(data, tipo) {
+    try {
+        const url = tipo
+            ? API_URL + '?tipo=' + encodeURIComponent(tipo)
+            : API_URL;
+        const r = await fetch(url, {
+            method: 'DELETE',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(data),
+            signal: AbortSignal.timeout(30000),
+        });
+        if (!r.ok) throw new Error('HTTP ' + r.status);
+    } catch (e) {
+        console.error('Error DELETE:', e);
+    }
 }
 
-async function iniciarLogin(){
-  goTo('sc-login');
-  document.getElementById('login-loader').style.display='block';
-  document.getElementById('login-form').style.display='none';
-  await cargarConfig();
-  await cargarPersonal();
-  llenarNombresLogin();
-  document.getElementById('login-loader').style.display='none';
-  document.getElementById('login-form').style.display='block';
+async function cargarPersonal() {
+    const data = await apiGet('personal');
+    personal = data.filter((d) => d.nombre);
+    personal.sort((a, b) => (a.orden || 0) - (b.orden || 0));
 }
 
-function llenarSel(id,arr,vFn,lFn,empty){
-  const s=document.getElementById(id);if(!s)return;
-  s.innerHTML='<option value="">'+(empty||'Selecciona')+'</option>';
-  arr.forEach((x,i)=>{const o=document.createElement('option');o.value=vFn(x,i);o.textContent=lFn(x,i);s.appendChild(o);});
+async function cargarConfig() {
+    const data = await apiGet('config');
+    const cfgAzure = data.find((d) => d.id === 'configuracion');
+    if (cfgAzure && cfgAzure.tipos) cfg.tipos = cfgAzure.tipos;
+    if (cfgAzure && cfgAzure.mes) cfg.mes = cfgAzure.mes;
+    if (cfgAzure && cfgAzure.dias) cfg.dias = cfgAzure.dias;
+    if (cfgAzure && cfgAzure.inicioSem !== undefined)
+        cfg.inicioSem = cfgAzure.inicioSem;
 }
-function llenarPersonas(id){llenarSel(id,personal,p=>p.nombre,p=>p.nombre);}
-function llenarTipos(id){llenarSel(id,cfg.tipos,t=>t.cod,t=>t.cod+' - '+t.desc);}
-function llenarNombresLogin(){llenarSel('sel-nombre',personal,(_,i)=>i,p=>p.nombre,'Tu nombre');}
+
+async function cargarRegistros() {
+    const data = await apiGet();
+    registros = {};
+    data.forEach((d) => {
+        if (d.nombre && d.dia && d.tipo) {
+            if (!registros[d.nombre]) registros[d.nombre] = {};
+            registros[d.nombre][d.dia] = d.tipo;
+        }
+    });
+}
+
+function togglePass(id, btn) {
+    const inp = document.getElementById(id);
+    if (inp.type === 'password') {
+        inp.type = 'text';
+        btn.style.color = '#3b82f6';
+    } else {
+        inp.type = 'password';
+        btn.style.color = '#94a3b8';
+    }
+}
+
+function goTo(id) {
+    document
+        .querySelectorAll('.screen')
+        .forEach((s) => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+    tipoSel = null;
+    document
+        .querySelectorAll('.tipo-btn')
+        .forEach((b) => b.classList.remove('sel'));
+    document.getElementById('home-mes').textContent = cfg.mes;
+}
+
+async function iniciarLogin() {
+    goTo('sc-login');
+    document.getElementById('login-loader').style.display = 'block';
+    document.getElementById('login-form').style.display = 'none';
+    await cargarConfig();
+    await cargarPersonal();
+    llenarNombresLogin();
+    document.getElementById('login-loader').style.display = 'none';
+    document.getElementById('login-form').style.display = 'block';
+}
+
+function llenarSel(id, arr, vFn, lFn, empty) {
+    const s = document.getElementById(id);
+    if (!s) return;
+    s.innerHTML = '<option value="">' + (empty || 'Selecciona') + '</option>';
+    arr.forEach((x, i) => {
+        const o = document.createElement('option');
+        o.value = vFn(x, i);
+        o.textContent = lFn(x, i);
+        s.appendChild(o);
+    });
+}
+function llenarPersonas(id) {
+    llenarSel(
+        id,
+        personal,
+        (p) => p.nombre,
+        (p) => p.nombre,
+    );
+}
+function llenarTipos(id) {
+    llenarSel(
+        id,
+        cfg.tipos,
+        (t) => t.cod,
+        (t) => t.cod + ' - ' + t.desc,
+    );
+}
+function llenarNombresLogin() {
+    llenarSel(
+        'sel-nombre',
+        personal,
+        (_, i) => i,
+        (p) => p.nombre,
+        'Tu nombre',
+    );
+}
 
 // Login con proteccion de intentos fallidos
 const BLOQUEO_MINUTOS = 20;
 const BLOQUEO_MS = BLOQUEO_MINUTOS * 60 * 1000;
 const MAX_INTENTOS = 5;
 
-function getBloqueo(key){
-  const data=JSON.parse(localStorage.getItem(key)||'null');
-  if(!data)return{count:0,blocked:false};
-  if(data.blocked&&Date.now()>data.until){
-    localStorage.removeItem(key);
-    return{count:0,blocked:false};
-  }
-  return data;
-}
-
-function setBloqueo(key,count,blocked){
-  localStorage.setItem(key,JSON.stringify({count,blocked,until:blocked?Date.now()+BLOQUEO_MS:0}));
-}
-
-function doLogin(){
-  const bl=getBloqueo('login_block');
-  if(bl.blocked){
-    const restante=Math.ceil((JSON.parse(localStorage.getItem('login_block')).until-Date.now())/60000);
-    alert('Demasiados intentos fallidos. Espera '+restante+' minuto(s).');return;
-  }
-
-  const idx=document.getElementById('sel-nombre').value;
-  const pass=document.getElementById('inp-pass').value;
-  const err=document.getElementById('login-err');
-  if(idx===''){err.textContent='Selecciona tu nombre.';err.style.display='block';return;}
-  if(!pass){err.textContent='Ingresa tu contraseña.';err.style.display='block';return;}
-  const p=personal[idx];
-  if(p.pass!==pass){
-    const nuevoCount=bl.count+1;
-    const bloqueado=nuevoCount>=MAX_INTENTOS;
-    setBloqueo('login_block',nuevoCount,bloqueado);
-    err.textContent=bloqueado?'Cuenta bloqueada por '+BLOQUEO_MINUTOS+' minutos.':'Contraseña incorrecta. Intento '+nuevoCount+'/'+MAX_INTENTOS+'.';
-    err.style.display='block';
-    return;
-  }
- localStorage.removeItem('login_block');
-  err.style.display='none';
-  document.getElementById('inp-pass').value='';
-  usuarioActual={idx:parseInt(idx),...p};
-  const dia=new Date().getDate();
-  const yaReg=registros[p.nombre]&&registros[p.nombre][dia];
-  document.getElementById('reg-title').textContent='Hola, '+p.nombre.split(',')[0];
-  document.getElementById('reg-info').innerHTML=yaReg
-    ?'<div class="alert alert-ok">Ya registraste <strong translate="no">'+yaReg+'</strong> hoy, dia '+dia+'.</div>'
-    :'<div style="font-size:13px;color:#64748b;">Hoy es el dia <strong>'+dia+'</strong> de '+cfg.mes+'</div>';
-  renderTiposGrid();
-  document.getElementById('rango-desde').value='';
-  document.getElementById('rango-hasta').value='';
-  goTo('sc-registro');
-}
-
-function renderTiposGrid(){
-  const g=document.getElementById('tipos-grid');g.innerHTML='';
-  cfg.tipos.forEach(t=>{
-    const d=document.createElement('div');
-    d.className='tipo-btn';
-    d.setAttribute('translate','no');
-    d.innerHTML='<span translate="no">'+t.cod+'</span><small translate="no">'+t.desc+'</small>';
-    d.onclick=()=>{tipoSel=t.cod;document.querySelectorAll('.tipo-btn').forEach(b=>b.classList.remove('sel'));d.classList.add('sel');};
-    g.appendChild(d);
-  });
-}
-
-async function doRegistro(){
-  const err=document.getElementById('reg-err');
-  if(!tipoSel){err.textContent='Selecciona el tipo de asistencia.';err.style.display='block';return;}
-  err.style.display='none';
-  const hoy=new Date().getDate();
-  const dv=parseInt(document.getElementById('rango-desde').value);
-  const hv=parseInt(document.getElementById('rango-hasta').value);
-  const desde=isNaN(dv)?hoy:dv;
-  const hasta=isNaN(hv)?desde:hv;
-  if(desde>hasta){err.textContent='Desde no puede ser mayor que hasta.';err.style.display='block';return;}
-  if(hasta-desde>30){err.textContent='El rango no puede ser mayor a 31 dias.';err.style.display='block';return;}
-  for(let d=desde;d<=hasta;d++){
-    if(!registros[usuarioActual.nombre])registros[usuarioActual.nombre]={};
-    registros[usuarioActual.nombre][d]=tipoSel;
-    await apiPost({id:usuarioActual.nombre.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d,nombre:usuarioActual.nombre,dia:d,tipo:tipoSel,mes:cfg.mes});
-  }
-  const rango=desde===hasta?'Dia '+desde:'Dias '+desde+' al '+hasta;
-  document.getElementById('ok-info').innerHTML='<strong>'+usuarioActual.nombre+'</strong><br>'+rango+' &rarr; <span translate="no">'+tipoSel+'</span><br><span style="font-size:12px;">'+cfg.mes+'</span>';
-  goTo('sc-ok');
-}
-
-async function doAdminLogin(){
-  const bl=getBloqueo('admin_block');
-  if(bl.blocked){
-    const restante=Math.ceil((JSON.parse(localStorage.getItem('admin_block')).until-Date.now())/60000);
-    alert('Demasiados intentos. Espera '+restante+' minuto(s).');return;
-  }
-  const pass=document.getElementById('inp-admin-pass').value;
-  const err=document.getElementById('admin-err');
-  if(pass!==ADMIN_PASS){
-   const nuevoCount=bl.count+1;
-    const bloqueado=nuevoCount>=MAX_INTENTOS;
-    setBloqueo('admin_block',nuevoCount,bloqueado);
-    err.textContent=bloqueado?'Cuenta bloqueada por '+BLOQUEO_MINUTOS+' minutos.':'Contraseña incorrecta. Intento '+nuevoCount+'/'+MAX_INTENTOS+'.';
-    err.style.display='block';
-    return;
-  }
-  localStorage.removeItem('admin_block');
-  err.style.display='none';
-  document.getElementById('inp-admin-pass').value='';
-  goTo('sc-admin');
-  await cargarConfig();
-  await cargarPersonal();
-  await cargarRegistros();
-  await cargarTurnos();
-  const mesActual=new Date().toLocaleString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
-  if(!cfg.mes.toUpperCase().includes(new Date().toLocaleString('es-AR',{month:'long'}).toUpperCase())){
-    setTimeout(()=>{
-      if(confirm('Atencion: El mes configurado es "'+cfg.mes+'" pero estamos en '+mesActual+'. Queres actualizar el mes?')){
-        switchTab('tab-config',document.querySelectorAll('.tab')[3]);
-      }
-    },500);
-  }
-  renderAll();
-}
-
-function switchTab(id,el){
-  document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
-  if(el)el.classList.add('active');
-  ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-turnos','tab-export'].forEach(t=>{
-    document.getElementById(t).style.display=t===id?'block':'none';
-  });
-  if(id==='tab-planilla')renderPlanilla();
-  if(id==='tab-personal')renderPersonal();
-  if(id==='tab-rangos')renderRangos();
-  if(id==='tab-config')renderConfig();
-  if(id==='tab-turnos')renderTurnos();
-}
-
-function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();renderTurnos();}
-
-function renderPlanilla(){
-  const c=document.getElementById('planilla-container');
-  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal registrado.</p>';return;}
-  const inicio=parseInt(cfg.inicioSem)||0;
-  let h='<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
-  for(let d=1;d<=cfg.dias;d++){
-    const semIdx=(inicio+d-1)%7;
-    const ds=DIAS_SEM[semIdx];
-    const esFinde=semIdx===0||semIdx===6;
-    h+='<th style="min-width:24px;'+(esFinde?'color:#ef4444;background:#fff5f5;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
-  }
-  h+='</tr></thead><tbody>';
-  personal.forEach(p=>{
-    h+='<tr><td class="col-fixed">'+p.nombre+'</td>';
-    for(let d=1;d<=cfg.dias;d++){
-      const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
-      const t=cfg.tipos.find(x=>x.cod===v);
-      const col=t?t.color:'';
-      const semIdx=(inicio+d-1)%7;
-      const esFinde=semIdx===0||semIdx===6;
-      h+='<td style="color:'+col+';font-weight:'+(v?'700':'400')+';background:'+(esFinde?'#fff5f5':'')+';"><span translate="no">'+v+'</span></td>';
+function getBloqueo(key) {
+    const data = JSON.parse(localStorage.getItem(key) || 'null');
+    if (!data) return { count: 0, blocked: false };
+    if (data.blocked && Date.now() > data.until) {
+        localStorage.removeItem(key);
+        return { count: 0, blocked: false };
     }
-    h+='</tr>';
-  });
-  h+='</tbody></table>';
-  c.innerHTML=h;
+    return data;
 }
 
-function renderPersonal(){
-  const c=document.getElementById('lista-personal');
-  if(!personal.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin personal.</p>';return;}
-  c.innerHTML=personal.map((p,i)=>
-    '<div class="row-between">'+
-    '<div style="flex:1;min-width:0;">'+
-    '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">'+p.nombre+'</div>'+
-    '<div style="font-size:11px;color:#64748b;">'+p.grado+' · L.P.: '+p.lp+'</div>'+
-    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">'+p.pass+'</span></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">'+
-    '<span style="cursor:pointer;font-size:18px;'+(i===0?'opacity:.25;pointer-events:none;':'')+'" onclick="moverPersona('+i+',-1)">↑</span>'+
-    '<span style="cursor:pointer;font-size:18px;'+(i===personal.length-1?'opacity:.25;pointer-events:none;':'')+'" onclick="moverPersona('+i+',1)">↓</span>'+
-    '<span style="cursor:pointer;color:#3b82f6;font-size:12px;font-weight:600;" onclick="editarPersona('+i+')">Editar</span>'+
-    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarPersona('+i+')">Quitar</span>'+
-    '</div></div>'
-  ).join('');
+function setBloqueo(key, count, blocked) {
+    localStorage.setItem(
+        key,
+        JSON.stringify({
+            count,
+            blocked,
+            until: blocked ? Date.now() + BLOQUEO_MS : 0,
+        }),
+    );
 }
 
-async function agregarPersona(){
-  const grado=sanitize(document.getElementById('inp-grado').value);
-  const lp=sanitize(document.getElementById('inp-lp').value);
-  const nombre=sanitize(document.getElementById('inp-nombre').value);
-  const pass=sanitize(document.getElementById('inp-new-pass').value);
-  if(!grado||!lp||!nombre||!pass){alert('Completa todos los campos.');return;}
-  if(pass.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
-  if(personal.find(p=>p.nombre===nombre)){alert('Ya existe esa persona.');return;}
-  const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
-  const orden=personal.length;
-  await apiPost({id,grado,lp,nombre,pass,orden},'personal');
-  personal.push({id,grado,lp,nombre,pass,orden});
-  ['inp-grado','inp-lp','inp-nombre','inp-new-pass'].forEach(i=>document.getElementById(i).value='');
-  renderPersonal();renderPlanilla();llenarPersonas('rango-persona');llenarPersonas('celda-persona');
+function doLogin() {
+    const bl = getBloqueo('login_block');
+    if (bl.blocked) {
+        const restante = Math.ceil(
+            (JSON.parse(localStorage.getItem('login_block')).until -
+                Date.now()) /
+                60000,
+        );
+        alert(
+            'Demasiados intentos fallidos. Espera ' + restante + ' minuto(s).',
+        );
+        return;
+    }
+
+    const idx = document.getElementById('sel-nombre').value;
+    const pass = document.getElementById('inp-pass').value;
+    const err = document.getElementById('login-err');
+    if (idx === '') {
+        err.textContent = 'Selecciona tu nombre.';
+        err.style.display = 'block';
+        return;
+    }
+    if (!pass) {
+        err.textContent = 'Ingresa tu contraseña.';
+        err.style.display = 'block';
+        return;
+    }
+    const p = personal[idx];
+    if (p.pass !== pass) {
+        const nuevoCount = bl.count + 1;
+        const bloqueado = nuevoCount >= MAX_INTENTOS;
+        setBloqueo('login_block', nuevoCount, bloqueado);
+        err.textContent = bloqueado
+            ? 'Cuenta bloqueada por ' + BLOQUEO_MINUTOS + ' minutos.'
+            : 'Contraseña incorrecta. Intento ' +
+              nuevoCount +
+              '/' +
+              MAX_INTENTOS +
+              '.';
+        err.style.display = 'block';
+        return;
+    }
+    localStorage.removeItem('login_block');
+    err.style.display = 'none';
+    document.getElementById('inp-pass').value = '';
+    usuarioActual = { idx: parseInt(idx), ...p };
+    const dia = new Date().getDate();
+    const yaReg = registros[p.nombre] && registros[p.nombre][dia];
+    document.getElementById('reg-title').textContent =
+        'Hola, ' + p.nombre.split(',')[0];
+    document.getElementById('reg-info').innerHTML = yaReg
+        ? '<div class="alert alert-ok">Ya registraste <strong translate="no">' +
+          yaReg +
+          '</strong> hoy, dia ' +
+          dia +
+          '.</div>'
+        : '<div style="font-size:13px;color:#64748b;">Hoy es el dia <strong>' +
+          dia +
+          '</strong> de ' +
+          cfg.mes +
+          '</div>';
+    renderTiposGrid();
+    document.getElementById('rango-desde').value = '';
+    document.getElementById('rango-hasta').value = '';
+    goTo('sc-registro');
 }
 
-async function editarPersona(i){
-  const p=personal[i];
-  const nuevoNombre=prompt('Apellido y Nombre (actual: '+p.nombre+'):',p.nombre);
-  if(nuevoNombre===null)return;
-  const nuevoPass=prompt('Contraseña (actual: '+p.pass+'):',p.pass);
-  if(nuevoPass===null)return;
-  if(!nuevoNombre.trim()||!nuevoPass.trim()){alert('Ningun campo puede estar vacio.');return;}
-  if(nuevoPass.trim().length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
-  personal[i]={...personal[i],nombre:sanitize(nuevoNombre),pass:sanitize(nuevoPass)};
-  await apiPost({...personal[i]},'personal');
-  renderPersonal();renderPlanilla();
+function renderTiposGrid() {
+    const g = document.getElementById('tipos-grid');
+    g.innerHTML = '';
+    cfg.tipos.forEach((t) => {
+        const d = document.createElement('div');
+        d.className = 'tipo-btn';
+        d.setAttribute('translate', 'no');
+        d.innerHTML =
+            '<span translate="no">' +
+            t.cod +
+            '</span><small translate="no">' +
+            t.desc +
+            '</small>';
+        d.onclick = () => {
+            tipoSel = t.cod;
+            document
+                .querySelectorAll('.tipo-btn')
+                .forEach((b) => b.classList.remove('sel'));
+            d.classList.add('sel');
+        };
+        g.appendChild(d);
+    });
 }
 
-async function moverPersona(i,dir){
-  const j=i+dir;
-  if(j<0||j>=personal.length)return;
-  [personal[i],personal[j]]=[personal[j],personal[i]];
-  personal[i].orden=i;personal[j].orden=j;
-  await apiPost({...personal[i]},'personal');
-  await apiPost({...personal[j]},'personal');
-  renderPersonal();renderPlanilla();
+async function doRegistro() {
+    const err = document.getElementById('reg-err');
+    if (!tipoSel) {
+        err.textContent = 'Selecciona el tipo de asistencia.';
+        err.style.display = 'block';
+        return;
+    }
+    err.style.display = 'none';
+    const hoy = new Date().getDate();
+    const dv = parseInt(document.getElementById('rango-desde').value);
+    const hv = parseInt(document.getElementById('rango-hasta').value);
+    const desde = isNaN(dv) ? hoy : dv;
+    const hasta = isNaN(hv) ? desde : hv;
+    if (desde > hasta) {
+        err.textContent = 'Desde no puede ser mayor que hasta.';
+        err.style.display = 'block';
+        return;
+    }
+    if (hasta - desde > 30) {
+        err.textContent = 'El rango no puede ser mayor a 31 dias.';
+        err.style.display = 'block';
+        return;
+    }
+    for (let d = desde; d <= hasta; d++) {
+        if (!registros[usuarioActual.nombre])
+            registros[usuarioActual.nombre] = {};
+        registros[usuarioActual.nombre][d] = tipoSel;
+        await apiPost({
+            id: usuarioActual.nombre.replace(/[^a-zA-Z0-9]/g, '_') + '_' + d,
+            nombre: usuarioActual.nombre,
+            dia: d,
+            tipo: tipoSel,
+            mes: cfg.mes,
+        });
+    }
+    const rango =
+        desde === hasta ? 'Dia ' + desde : 'Dias ' + desde + ' al ' + hasta;
+    document.getElementById('ok-info').innerHTML =
+        '<strong>' +
+        usuarioActual.nombre +
+        '</strong><br>' +
+        rango +
+        ' &rarr; <span translate="no">' +
+        tipoSel +
+        '</span><br><span style="font-size:12px;">' +
+        cfg.mes +
+        '</span>';
+    goTo('sc-ok');
 }
 
-async function eliminarPersona(i){
-  if(!confirm('Quitar a '+personal[i].nombre+'?'))return;
-  await apiDelete({id:personal[i].id},'personal');
-  personal.splice(i,1);
-  renderPersonal();renderPlanilla();
+async function doAdminLogin() {
+    const bl = getBloqueo('admin_block');
+    if (bl.blocked) {
+        const restante = Math.ceil(
+            (JSON.parse(localStorage.getItem('admin_block')).until -
+                Date.now()) /
+                60000,
+        );
+        alert('Demasiados intentos. Espera ' + restante + ' minuto(s).');
+        return;
+    }
+    const pass = document.getElementById('inp-admin-pass').value;
+    const err = document.getElementById('admin-err');
+    if (pass !== ADMIN_PASS) {
+        const nuevoCount = bl.count + 1;
+        const bloqueado = nuevoCount >= MAX_INTENTOS;
+        setBloqueo('admin_block', nuevoCount, bloqueado);
+        err.textContent = bloqueado
+            ? 'Cuenta bloqueada por ' + BLOQUEO_MINUTOS + ' minutos.'
+            : 'Contraseña incorrecta. Intento ' +
+              nuevoCount +
+              '/' +
+              MAX_INTENTOS +
+              '.';
+        err.style.display = 'block';
+        return;
+    }
+    localStorage.removeItem('admin_block');
+    err.style.display = 'none';
+    document.getElementById('inp-admin-pass').value = '';
+    goTo('sc-admin');
+    await cargarConfig();
+    await cargarPersonal();
+    await cargarRegistros();
+    await cargarTurnos();
+    const mesActual = new Date()
+        .toLocaleString('es-AR', { month: 'long', year: 'numeric' })
+        .toUpperCase();
+    if (
+        !cfg.mes
+            .toUpperCase()
+            .includes(
+                new Date()
+                    .toLocaleString('es-AR', { month: 'long' })
+                    .toUpperCase(),
+            )
+    ) {
+        setTimeout(() => {
+            if (
+                confirm(
+                    'Atencion: El mes configurado es "' +
+                        cfg.mes +
+                        '" pero estamos en ' +
+                        mesActual +
+                        '. Queres actualizar el mes?',
+                )
+            ) {
+                switchTab('tab-config', document.querySelectorAll('.tab')[3]);
+            }
+        }, 500);
+    }
+    renderAll();
 }
 
-function renderRangos(){
-  llenarPersonas('rango-persona');llenarPersonas('celda-persona');
-  llenarTipos('rango-admin-tipo');llenarTipos('celda-tipo');
+function switchTab(id, el) {
+    document
+        .querySelectorAll('.tabs .tab')
+        .forEach((t) => t.classList.remove('active'));
+    if (el) el.classList.add('active');
+    [
+        'tab-planilla',
+        'tab-personal',
+        'tab-rangos',
+        'tab-config',
+        'tab-turnos',
+        'tab-export',
+    ].forEach((t) => {
+        document.getElementById(t).style.display = t === id ? 'block' : 'none';
+    });
+    if (id === 'tab-planilla') renderPlanilla();
+    if (id === 'tab-personal') renderPersonal();
+    if (id === 'tab-rangos') renderRangos();
+    if (id === 'tab-config') renderConfig();
+    if (id === 'tab-turnos') renderTurnos();
 }
 
-async function aplicarRangoAdmin(){
-  const persona=document.getElementById('rango-persona').value;
-  const desde=parseInt(document.getElementById('rango-admin-desde').value);
-  const hasta=parseInt(document.getElementById('rango-admin-hasta').value);
-  const tipo=document.getElementById('rango-admin-tipo').value;
-  if(!persona||!tipo||isNaN(desde)||isNaN(hasta)){alert('Completa todos los campos.');return;}
-  if(desde>hasta){alert('Desde no puede ser mayor que hasta.');return;}
-  for(let d=desde;d<=hasta;d++){
-    if(!registros[persona])registros[persona]={};
-    registros[persona][d]=tipo;
-    await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d,nombre:persona,dia:d,tipo,mes:cfg.mes});
-  }
-  alert('Aplicado: '+persona+', dias '+desde+' al '+hasta+' → '+tipo);
-await cargarRegistros();
-renderPlanilla();
-}
-
-async function editarCelda(){
-  const persona=document.getElementById('celda-persona').value;
-  const dia=parseInt(document.getElementById('celda-dia').value);
-  const tipo=document.getElementById('celda-tipo').value;
-  if(!persona||isNaN(dia)){alert('Selecciona persona y dia.');return;}
-  if(!tipo){
-    if(!confirm('Borrar el registro de '+persona+' del dia '+dia+'?'))return;
-    if(registros[persona])delete registros[persona][dia];
-    await apiDelete({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,nombre:persona},'registro');
-    alert('Registro borrado.');
+function renderAll() {
     renderPlanilla();
-    return;
-  }
-  if(!registros[persona])registros[persona]={};
-  registros[persona][dia]=tipo;
-  await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+dia,nombre:persona,dia,tipo,mes:cfg.mes});
-  alert('Celda actualizada.');
-  renderPlanilla();
+    renderPersonal();
+    renderRangos();
+    renderConfig();
+    renderTurnos();
 }
 
-function renderConfig(){
-  document.getElementById('cfg-mes').value=cfg.mes;
-  document.getElementById('cfg-dias').value=cfg.dias;
-  document.getElementById('cfg-inicio').value=cfg.inicioSem||0;
-  const lt=document.getElementById('lista-tipos');
-  lt.innerHTML=cfg.tipos.map((t,i)=>
-    '<div class="row-between">'+
-    '<span style="font-size:13px;display:flex;align-items:center;"><span class="dot" style="background:'+t.color+'"></span><strong translate="no">'+t.cod+'</strong>&nbsp;–&nbsp;<span translate="no">'+t.desc+'</span></span>'+
-    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTipo('+i+')">Quitar</span>'+
-    '</div>'
-  ).join('');
+function renderPlanilla() {
+    const c = document.getElementById('planilla-container');
+    if (!personal.length) {
+        c.innerHTML =
+            '<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal registrado.</p>';
+        return;
+    }
+    const inicio = parseInt(cfg.inicioSem) || 0;
+    let h = '<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
+    for (let d = 1; d <= cfg.dias; d++) {
+        const semIdx = (inicio + d - 1) % 7;
+        const ds = DIAS_SEM[semIdx];
+        const esFinde = semIdx === 0 || semIdx === 6;
+        h +=
+            '<th style="min-width:24px;' +
+            (esFinde ? 'color:#ef4444;background:#fff5f5;' : '') +
+            '">' +
+            d +
+            '<br><span style="font-size:9px;font-weight:400;">' +
+            ds +
+            '</span></th>';
+    }
+    h += '</tr></thead><tbody>';
+    personal.forEach((p) => {
+        h += '<tr><td class="col-fixed">' + p.nombre + '</td>';
+        for (let d = 1; d <= cfg.dias; d++) {
+            const v =
+                registros[p.nombre] && registros[p.nombre][d]
+                    ? registros[p.nombre][d]
+                    : '';
+            const t = cfg.tipos.find((x) => x.cod === v);
+            const col = t ? t.color : '';
+            const semIdx = (inicio + d - 1) % 7;
+            const esFinde = semIdx === 0 || semIdx === 6;
+            h +=
+                '<td style="color:' +
+                col +
+                ';font-weight:' +
+                (v ? '700' : '400') +
+                ';background:' +
+                (esFinde ? '#fff5f5' : '') +
+                ';"><span translate="no">' +
+                v +
+                '</span></td>';
+        }
+        h += '</tr>';
+    });
+    h += '</tbody></table>';
+    c.innerHTML = h;
 }
 
-async function guardarConfigMes(){
-  cfg.mes=sanitize(document.getElementById('cfg-mes').value)||cfg.mes;
-  cfg.dias=parseInt(document.getElementById('cfg-dias').value)||30;
-  cfg.inicioSem=parseInt(document.getElementById('cfg-inicio').value)||0;
-  svLocal('cfg');
-  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
-  alert('Configuracion guardada para todos.');
-  renderPlanilla();
+function renderPersonal() {
+    const c = document.getElementById('lista-personal');
+    if (!personal.length) {
+        c.innerHTML =
+            '<p style="font-size:13px;color:#64748b;">Sin personal.</p>';
+        return;
+    }
+    c.innerHTML = personal
+        .map(
+            (p, i) =>
+                '<div class="row-between">' +
+                '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:13px;font-weight:600;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' +
+                p.nombre +
+                '</div>' +
+                '<div style="font-size:11px;color:#64748b;">' +
+                p.grado +
+                ' · L.P.: ' +
+                p.lp +
+                '</div>' +
+                '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">' +
+                p.pass +
+                '</span></div>' +
+                '</div>' +
+                '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">' +
+                '<span style="cursor:pointer;font-size:18px;' +
+                (i === 0 ? 'opacity:.25;pointer-events:none;' : '') +
+                '" onclick="moverPersona(' +
+                i +
+                ',-1)">↑</span>' +
+                '<span style="cursor:pointer;font-size:18px;' +
+                (i === personal.length - 1
+                    ? 'opacity:.25;pointer-events:none;'
+                    : '') +
+                '" onclick="moverPersona(' +
+                i +
+                ',1)">↓</span>' +
+                '<span style="cursor:pointer;color:#3b82f6;font-size:12px;font-weight:600;" onclick="editarPersona(' +
+                i +
+                ')">Editar</span>' +
+                '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarPersona(' +
+                i +
+                ')">Quitar</span>' +
+                '</div></div>',
+        )
+        .join('');
 }
 
-async function agregarTipo(){
-  const cod=sanitize(document.getElementById('cfg-tipo-cod').value).toUpperCase();
-  const desc=sanitize(document.getElementById('cfg-tipo-desc').value);
-  const color=document.getElementById('cfg-tipo-color').value;
-  if(!cod||!desc){alert('Completa codigo y descripcion.');return;}
-  if(cfg.tipos.find(t=>t.cod===cod)){alert('Ese codigo ya existe.');return;}
-  cfg.tipos.push({cod,desc,color});svLocal('cfg');
-  document.getElementById('cfg-tipo-cod').value='';
-  document.getElementById('cfg-tipo-desc').value='';
-  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
-  renderConfig();
+async function agregarPersona() {
+    const grado = sanitize(document.getElementById('inp-grado').value);
+    const lp = sanitize(document.getElementById('inp-lp').value);
+    const nombre = sanitize(document.getElementById('inp-nombre').value);
+    const pass = sanitize(document.getElementById('inp-new-pass').value);
+    if (!grado || !lp || !nombre || !pass) {
+        alert('Completa todos los campos.');
+        return;
+    }
+    if (pass.length < 4) {
+        alert('La contraseña debe tener al menos 4 caracteres.');
+        return;
+    }
+    if (personal.find((p) => p.nombre === nombre)) {
+        alert('Ya existe esa persona.');
+        return;
+    }
+    const id = nombre.replace(/[^a-zA-Z0-9]/g, '_');
+    const orden = personal.length;
+    await apiPost({ id, grado, lp, nombre, pass, orden }, 'personal');
+    personal.push({ id, grado, lp, nombre, pass, orden });
+    ['inp-grado', 'inp-lp', 'inp-nombre', 'inp-new-pass'].forEach(
+        (i) => (document.getElementById(i).value = ''),
+    );
+    renderPersonal();
+    renderPlanilla();
+    llenarPersonas('rango-persona');
+    llenarPersonas('celda-persona');
 }
 
-async function eliminarTipo(i){
-  if(!confirm('Quitar el tipo "'+cfg.tipos[i].cod+'"?'))return;
-  cfg.tipos.splice(i,1);svLocal('cfg');
-  await apiPost({id:'configuracion',mes:cfg.mes,dias:cfg.dias,inicioSem:cfg.inicioSem,tipos:cfg.tipos},'config');
-  renderConfig();
+async function editarPersona(i) {
+    const p = personal[i];
+    const nuevoNombre = prompt(
+        'Apellido y Nombre (actual: ' + p.nombre + '):',
+        p.nombre,
+    );
+    if (nuevoNombre === null) return;
+    const nuevoPass = prompt('Contraseña (actual: ' + p.pass + '):', p.pass);
+    if (nuevoPass === null) return;
+    if (!nuevoNombre.trim() || !nuevoPass.trim()) {
+        alert('Ningun campo puede estar vacio.');
+        return;
+    }
+    if (nuevoPass.trim().length < 4) {
+        alert('La contraseña debe tener al menos 4 caracteres.');
+        return;
+    }
+    personal[i] = {
+        ...personal[i],
+        nombre: sanitize(nuevoNombre),
+        pass: sanitize(nuevoPass),
+    };
+    await apiPost({ ...personal[i] }, 'personal');
+    renderPersonal();
+    renderPlanilla();
 }
 
-function exportarCSV(){
-  let csv='Apellido y Nombre';
-  for(let d=1;d<=cfg.dias;d++)csv+=','+d;
-  csv+='\n';
-  personal.forEach(p=>{
-    csv+='"'+p.nombre+'"';
-    for(let d=1;d<=cfg.dias;d++)csv+=','+(registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'');
-    csv+='\n';
-  });
-  const blob=new Blob([csv],{type:'text/csv;charset=utf-8;'});
-  const a=document.createElement('a');
-  a.href=URL.createObjectURL(blob);
-  a.download='Guardias_'+cfg.mes.replace(/ /g,'_')+'.csv';
-  a.click();
+async function moverPersona(i, dir) {
+    const j = i + dir;
+    if (j < 0 || j >= personal.length) return;
+    [personal[i], personal[j]] = [personal[j], personal[i]];
+    personal[i].orden = i;
+    personal[j].orden = j;
+    await apiPost({ ...personal[i] }, 'personal');
+    await apiPost({ ...personal[j] }, 'personal');
+    renderPersonal();
+    renderPlanilla();
 }
 
-async function reiniciarMes(){
-  if(!confirm('Archivar el mes "'+cfg.mes+'" y reiniciar los registros? El personal no se borra.'))return;
-  const mesArchivo={
-    id:cfg.mes.replace(/ /g,'_')+'_'+Date.now(),
-    mes:cfg.mes,fecha:new Date().toISOString(),
-    registros:registros,
-    personal:personal.map(p=>({nombre:p.nombre,grado:p.grado,lp:p.lp}))
-  };
-  await apiPost(mesArchivo,'archivo');
-  await apiPost({},'limpiar');
-  registros={};
-  alert('Mes archivado y reiniciado correctamente.');
-  renderPlanilla();
+async function eliminarPersona(i) {
+    if (!confirm('Quitar a ' + personal[i].nombre + '?')) return;
+    await apiDelete({ id: personal[i].id }, 'personal');
+    personal.splice(i, 1);
+    renderPersonal();
+    renderPlanilla();
 }
 
-async function cargarTurnos(){
-  const data=await apiGet('turnos');
-  turnos=data.filter(d=>d.nombre);
+function renderRangos() {
+    llenarPersonas('rango-persona');
+    llenarPersonas('celda-persona');
+    llenarTipos('rango-admin-tipo');
+    llenarTipos('celda-tipo');
 }
 
-function renderTurnos(){
-  const c=document.getElementById('lista-turnos');
-  if(!c)return;
-  if(!turnos.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin turnos creados.</p>';return;}
-  c.innerHTML=turnos.map((t,i)=>
-    '<div class="row-between">'+
-    '<div style="flex:1;min-width:0;">'+
-    '<div style="font-size:13px;font-weight:600;">'+t.nombre+'</div>'+
-    '<div style="font-size:11px;color:#64748b;">Personal: '+t.personal.length+' personas</div>'+
-    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">'+t.pass+'</span></div>'+
-    '</div>'+
-    '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">'+
-    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTurno('+i+')">Quitar</span>'+
-    '</div></div>'
-  ).join('');
-  // llenar selector de personal por turno
-  const sel=document.getElementById('turno-sel-turno');
-  if(sel){
-    sel.innerHTML='<option value="">Selecciona turno</option>';
-    turnos.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=t.nombre;sel.appendChild(o);});
-  }
-  llenarPersonas('turno-sel-persona');
+async function aplicarRangoAdmin() {
+    const persona = document.getElementById('rango-persona').value;
+    const desde = parseInt(document.getElementById('rango-admin-desde').value);
+    const hasta = parseInt(document.getElementById('rango-admin-hasta').value);
+    const tipo = document.getElementById('rango-admin-tipo').value;
+    if (!persona || !tipo || isNaN(desde) || isNaN(hasta)) {
+        alert('Completa todos los campos.');
+        return;
+    }
+    if (desde > hasta) {
+        alert('Desde no puede ser mayor que hasta.');
+        return;
+    }
+    for (let d = desde; d <= hasta; d++) {
+        if (!registros[persona]) registros[persona] = {};
+        registros[persona][d] = tipo;
+        await apiPost({
+            id: persona.replace(/[^a-zA-Z0-9]/g, '_') + '_' + d,
+            nombre: persona,
+            dia: d,
+            tipo,
+            mes: cfg.mes,
+        });
+    }
+    alert(
+        'Aplicado: ' +
+            persona +
+            ', dias ' +
+            desde +
+            ' al ' +
+            hasta +
+            ' → ' +
+            tipo,
+    );
+    await cargarRegistros();
+    renderPlanilla();
 }
 
-async function agregarTurno(){
-  const nombre=sanitize(document.getElementById('inp-turno-nombre').value);
-  const pass=sanitize(document.getElementById('inp-turno-pass').value);
-  if(!nombre||!pass){alert('Completa nombre y contraseña del turno.');return;}
-  if(pass.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
-  if(turnos.find(t=>t.nombre===nombre)){alert('Ya existe ese turno.');return;}
-  const btn=document.querySelector('[onclick="agregarTurno()"]');
-  btn.textContent='Guardando...';btn.disabled=true;
-  const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
-  await apiPost({id,nombre,pass,personal:[]},'turno');
-  turnos.push({id,nombre,pass,personal:[]});
-  document.getElementById('inp-turno-nombre').value='';
-  document.getElementById('inp-turno-pass').value='';
-  btn.textContent='Crear turno';btn.disabled=false;
-  renderTurnos();
-  alert('Turno "'+nombre+'" creado correctamente.');
+async function editarCelda() {
+    const persona = document.getElementById('celda-persona').value;
+    const dia = parseInt(document.getElementById('celda-dia').value);
+    const tipo = document.getElementById('celda-tipo').value;
+    if (!persona || isNaN(dia)) {
+        alert('Selecciona persona y dia.');
+        return;
+    }
+    if (!tipo) {
+        if (
+            !confirm(
+                'Borrar el registro de ' + persona + ' del dia ' + dia + '?',
+            )
+        )
+            return;
+        if (registros[persona]) delete registros[persona][dia];
+        await apiDelete(
+            {
+                id: persona.replace(/[^a-zA-Z0-9]/g, '_') + '_' + dia,
+                nombre: persona,
+            },
+            'registro',
+        );
+        alert('Registro borrado.');
+        renderPlanilla();
+        return;
+    }
+    if (!registros[persona]) registros[persona] = {};
+    registros[persona][dia] = tipo;
+    await apiPost({
+        id: persona.replace(/[^a-zA-Z0-9]/g, '_') + '_' + dia,
+        nombre: persona,
+        dia,
+        tipo,
+        mes: cfg.mes,
+    });
+    alert('Celda actualizada.');
+    renderPlanilla();
 }
 
-async function agregarPersonaATurno(){
-  const turnoIdx=document.getElementById('turno-sel-turno').value;
-  const persona=document.getElementById('turno-sel-persona').value;
-  if(turnoIdx===''||!persona){alert('Selecciona turno y persona.');return;}
-  const t=turnos[turnoIdx];
-  if(t.personal.includes(persona)){alert('Esa persona ya está en el turno.');return;}
-  const btn=document.querySelector('[onclick="agregarPersonaATurno()"]');
-  btn.textContent='Guardando...';btn.disabled=true;
-  t.personal.push(persona);
-  await apiPost({...t},'turno');
-  btn.textContent='Asignar persona';btn.disabled=false;
-  renderTurnos();
-  alert('Persona agregada al '+t.nombre);
+function renderConfig() {
+    document.getElementById('cfg-mes').value = cfg.mes;
+    document.getElementById('cfg-dias').value = cfg.dias;
+    document.getElementById('cfg-inicio').value = cfg.inicioSem || 0;
+    const lt = document.getElementById('lista-tipos');
+    lt.innerHTML = cfg.tipos
+        .map(
+            (t, i) =>
+                '<div class="row-between">' +
+                '<span style="font-size:13px;display:flex;align-items:center;"><span class="dot" style="background:' +
+                t.color +
+                '"></span><strong translate="no">' +
+                t.cod +
+                '</strong>&nbsp;–&nbsp;<span translate="no">' +
+                t.desc +
+                '</span></span>' +
+                '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTipo(' +
+                i +
+                ')">Quitar</span>' +
+                '</div>',
+        )
+        .join('');
 }
 
-async function eliminarTurno(i){
-  if(!confirm('Quitar el turno "'+turnos[i].nombre+'"?'))return;
-  await apiDelete({id:turnos[i].id},'turno');
-  turnos.splice(i,1);
-  renderTurnos();
+async function guardarConfigMes() {
+    cfg.mes = sanitize(document.getElementById('cfg-mes').value) || cfg.mes;
+    cfg.dias = parseInt(document.getElementById('cfg-dias').value) || 30;
+    cfg.inicioSem = parseInt(document.getElementById('cfg-inicio').value) || 0;
+    svLocal('cfg');
+    await apiPost(
+        {
+            id: 'configuracion',
+            mes: cfg.mes,
+            dias: cfg.dias,
+            inicioSem: cfg.inicioSem,
+            tipos: cfg.tipos,
+        },
+        'config',
+    );
+    alert('Configuracion guardada para todos.');
+    renderPlanilla();
+}
+
+async function agregarTipo() {
+    const cod = sanitize(
+        document.getElementById('cfg-tipo-cod').value,
+    ).toUpperCase();
+    const desc = sanitize(document.getElementById('cfg-tipo-desc').value);
+    const color = document.getElementById('cfg-tipo-color').value;
+    if (!cod || !desc) {
+        alert('Completa codigo y descripcion.');
+        return;
+    }
+    if (cfg.tipos.find((t) => t.cod === cod)) {
+        alert('Ese codigo ya existe.');
+        return;
+    }
+    cfg.tipos.push({ cod, desc, color });
+    svLocal('cfg');
+    document.getElementById('cfg-tipo-cod').value = '';
+    document.getElementById('cfg-tipo-desc').value = '';
+    await apiPost(
+        {
+            id: 'configuracion',
+            mes: cfg.mes,
+            dias: cfg.dias,
+            inicioSem: cfg.inicioSem,
+            tipos: cfg.tipos,
+        },
+        'config',
+    );
+    renderConfig();
+}
+
+async function eliminarTipo(i) {
+    if (!confirm('Quitar el tipo "' + cfg.tipos[i].cod + '"?')) return;
+    cfg.tipos.splice(i, 1);
+    svLocal('cfg');
+    await apiPost(
+        {
+            id: 'configuracion',
+            mes: cfg.mes,
+            dias: cfg.dias,
+            inicioSem: cfg.inicioSem,
+            tipos: cfg.tipos,
+        },
+        'config',
+    );
+    renderConfig();
+}
+
+function exportarCSV() {
+    let csv = 'Apellido y Nombre';
+    for (let d = 1; d <= cfg.dias; d++) csv += ',' + d;
+    csv += '\n';
+    personal.forEach((p) => {
+        csv += '"' + p.nombre + '"';
+        for (let d = 1; d <= cfg.dias; d++)
+            csv +=
+                ',' +
+                (registros[p.nombre] && registros[p.nombre][d]
+                    ? registros[p.nombre][d]
+                    : '');
+        csv += '\n';
+    });
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'Guardias_' + cfg.mes.replace(/ /g, '_') + '.csv';
+    a.click();
+}
+
+async function reiniciarMes() {
+    if (
+        !confirm(
+            'Archivar el mes "' +
+                cfg.mes +
+                '" y reiniciar los registros? El personal no se borra.',
+        )
+    )
+        return;
+    const mesArchivo = {
+        id: cfg.mes.replace(/ /g, '_') + '_' + Date.now(),
+        mes: cfg.mes,
+        fecha: new Date().toISOString(),
+        registros: registros,
+        personal: personal.map((p) => ({
+            nombre: p.nombre,
+            grado: p.grado,
+            lp: p.lp,
+        })),
+    };
+    await apiPost(mesArchivo, 'archivo');
+    await apiPost({}, 'limpiar');
+    registros = {};
+    alert('Mes archivado y reiniciado correctamente.');
+    renderPlanilla();
+}
+
+async function cargarTurnos() {
+    const data = await apiGet('turnos');
+    turnos = data.filter((d) => d.nombre);
+}
+
+function renderTurnos() {
+    const c = document.getElementById('lista-turnos');
+    if (!c) return;
+    if (!turnos.length) {
+        c.innerHTML =
+            '<p style="font-size:13px;color:#64748b;">Sin turnos creados.</p>';
+        return;
+    }
+    c.innerHTML = turnos
+        .map(
+            (t, i) =>
+                '<div class="row-between">' +
+                '<div style="flex:1;min-width:0;">' +
+                '<div style="font-size:13px;font-weight:600;">' +
+                t.nombre +
+                '</div>' +
+                '<div style="font-size:11px;color:#64748b;">Personal: ' +
+                t.personal.length +
+                ' personas</div>' +
+                '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">' +
+                t.pass +
+                '</span></div>' +
+                '</div>' +
+                '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' +
+                '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTurno(' +
+                i +
+                ')">Quitar</span>' +
+                '</div></div>',
+        )
+        .join('');
+    // llenar selector de personal por turno
+    const sel = document.getElementById('turno-sel-turno');
+    if (sel) {
+        sel.innerHTML = '<option value="">Selecciona turno</option>';
+        turnos.forEach((t, i) => {
+            const o = document.createElement('option');
+            o.value = i;
+            o.textContent = t.nombre;
+            sel.appendChild(o);
+        });
+    }
+    llenarPersonas('turno-sel-persona');
+}
+
+async function agregarTurno() {
+    const nombre = sanitize(document.getElementById('inp-turno-nombre').value);
+    const pass = sanitize(document.getElementById('inp-turno-pass').value);
+    if (!nombre || !pass) {
+        alert('Completa nombre y contraseña del turno.');
+        return;
+    }
+    if (pass.length < 4) {
+        alert('La contraseña debe tener al menos 4 caracteres.');
+        return;
+    }
+    if (turnos.find((t) => t.nombre === nombre)) {
+        alert('Ya existe ese turno.');
+        return;
+    }
+    const btn = document.querySelector('[onclick="agregarTurno()"]');
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    const id = nombre.replace(/[^a-zA-Z0-9]/g, '_');
+    await apiPost({ id, nombre, pass, personal: [] }, 'turno');
+    turnos.push({ id, nombre, pass, personal: [] });
+    document.getElementById('inp-turno-nombre').value = '';
+    document.getElementById('inp-turno-pass').value = '';
+    btn.textContent = 'Crear turno';
+    btn.disabled = false;
+    renderTurnos();
+    alert('Turno "' + nombre + '" creado correctamente.');
+}
+
+async function agregarPersonaATurno() {
+    const turnoIdx = document.getElementById('turno-sel-turno').value;
+    const persona = document.getElementById('turno-sel-persona').value;
+    if (turnoIdx === '' || !persona) {
+        alert('Selecciona turno y persona.');
+        return;
+    }
+    const t = turnos[turnoIdx];
+    if (t.personal.includes(persona)) {
+        alert('Esa persona ya está en el turno.');
+        return;
+    }
+    const btn = document.querySelector('[onclick="agregarPersonaATurno()"]');
+    btn.textContent = 'Guardando...';
+    btn.disabled = true;
+    t.personal.push(persona);
+    await apiPost({ ...t }, 'turno');
+    btn.textContent = 'Asignar persona';
+    btn.disabled = false;
+    renderTurnos();
+    alert('Persona agregada al ' + t.nombre);
+}
+
+async function eliminarTurno(i) {
+    if (!confirm('Quitar el turno "' + turnos[i].nombre + '"?')) return;
+    await apiDelete({ id: turnos[i].id }, 'turno');
+    turnos.splice(i, 1);
+    renderTurnos();
 }
 
 // Login jefe de turno
 async function iniciarLoginTurno(){
   goTo('sc-turno-login');
-}
-
-async function doTurnoLogin(){
-  const pass=document.getElementById('inp-turno-login-pass').value;
-  const err=document.getElementById('turno-login-err');
-  if(!pass){err.textContent='Ingresa la contraseña.';err.style.display='block';return;}
-  await cargarTurnos();
-  const turno=turnos.find(t=>t.pass===pass);
-  if(!turno){err.textContent='Contraseña incorrecta.';err.style.display='block';return;}
-  err.style.display='none';
   document.getElementById('inp-turno-login-pass').value='';
-  await cargarConfig();
-  await cargarRegistros();
-  renderPlanillaTurno(turno);
-  document.getElementById('turno-titulo').textContent='Planilla — '+turno.nombre;
-  goTo('sc-turno-planilla');
+  document.getElementById('turno-login-err').style.display='none';
+  await cargarTurnos();
 }
 
-function renderPlanillaTurno(turno){
-  const c=document.getElementById('planilla-turno-container');
-  const personalTurno=personal.filter(p=>turno.personal.includes(p.nombre));
-  if(!personalTurno.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal asignado a este turno.</p>';return;}
-  const inicio=parseInt(cfg.inicioSem)||0;
-  let h='<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
-  for(let d=1;d<=cfg.dias;d++){
-    const semIdx=(inicio+d-1)%7;
-    const ds=DIAS_SEM[semIdx];
-    const esFinde=semIdx===0||semIdx===6;
-    h+='<th style="min-width:24px;'+(esFinde?'color:#ef4444;background:#fff5f5;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
-  }
-  h+='</tr></thead><tbody>';
-  personalTurno.forEach(p=>{
-    h+='<tr><td class="col-fixed">'+p.nombre+'</td>';
-    for(let d=1;d<=cfg.dias;d++){
-      const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
-      const t=cfg.tipos.find(x=>x.cod===v);
-      const col=t?t.color:'';
-      const semIdx=(inicio+d-1)%7;
-      const esFinde=semIdx===0||semIdx===6;
-      h+='<td style="color:'+col+';font-weight:'+(v?'700':'400')+';background:'+(esFinde?'#fff5f5':'')+';"><span translate="no">'+v+'</span></td>';
+async function doTurnoLogin() {
+    const pass = document.getElementById('inp-turno-login-pass').value;
+    const err = document.getElementById('turno-login-err');
+    if (!pass) {
+        err.textContent = 'Ingresa la contraseña.';
+        err.style.display = 'block';
+        return;
     }
-    h+='</tr>';
-  });
-  h+='</tbody></table>';
-  c.innerHTML=h;
+    
+    const turno = turnos.find((t) => t.pass === pass);
+    if (!turno) {
+        err.textContent = 'Contraseña incorrecta.';
+        err.style.display = 'block';
+        return;
+    }
+    err.style.display = 'none';
+    document.getElementById('inp-turno-login-pass').value = '';
+    await cargarConfig();
+    await cargarRegistros();
+    renderPlanillaTurno(turno);
+    document.getElementById('turno-titulo').textContent =
+        'Planilla — ' + turno.nombre;
+    goTo('sc-turno-planilla');
+}
+
+function renderPlanillaTurno(turno) {
+    const c = document.getElementById('planilla-turno-container');
+    const personalTurno = personal.filter((p) =>
+        turno.personal.includes(p.nombre),
+    );
+    if (!personalTurno.length) {
+        c.innerHTML =
+            '<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal asignado a este turno.</p>';
+        return;
+    }
+    const inicio = parseInt(cfg.inicioSem) || 0;
+    let h = '<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
+    for (let d = 1; d <= cfg.dias; d++) {
+        const semIdx = (inicio + d - 1) % 7;
+        const ds = DIAS_SEM[semIdx];
+        const esFinde = semIdx === 0 || semIdx === 6;
+        h +=
+            '<th style="min-width:24px;' +
+            (esFinde ? 'color:#ef4444;background:#fff5f5;' : '') +
+            '">' +
+            d +
+            '<br><span style="font-size:9px;font-weight:400;">' +
+            ds +
+            '</span></th>';
+    }
+    h += '</tr></thead><tbody>';
+    personalTurno.forEach((p) => {
+        h += '<tr><td class="col-fixed">' + p.nombre + '</td>';
+        for (let d = 1; d <= cfg.dias; d++) {
+            const v =
+                registros[p.nombre] && registros[p.nombre][d]
+                    ? registros[p.nombre][d]
+                    : '';
+            const t = cfg.tipos.find((x) => x.cod === v);
+            const col = t ? t.color : '';
+            const semIdx = (inicio + d - 1) % 7;
+            const esFinde = semIdx === 0 || semIdx === 6;
+            h +=
+                '<td style="color:' +
+                col +
+                ';font-weight:' +
+                (v ? '700' : '400') +
+                ';background:' +
+                (esFinde ? '#fff5f5' : '') +
+                ';"><span translate="no">' +
+                v +
+                '</span></td>';
+        }
+        h += '</tr>';
+    });
+    h += '</tbody></table>';
+    c.innerHTML = h;
 }
 
 goTo('sc-home');
