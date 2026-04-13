@@ -20,7 +20,7 @@ let usuarioActual=null;
 let tipoSel=null;
 
 // Rate limiting client-side
-const rateLimiter={calls:{},limit:10,window:1200000};
+const rateLimiter={calls:{},limit:100,window:60000};
 function checkRateLimit(key){
   const now=Date.now();
   if(!rateLimiter.calls[key])rateLimiter.calls[key]=[];
@@ -372,7 +372,8 @@ async function aplicarRangoAdmin(){
     await apiPost({id:persona.replace(/[^a-zA-Z0-9]/g,'_')+'_'+d,nombre:persona,dia:d,tipo,mes:cfg.mes});
   }
   alert('Aplicado: '+persona+', dias '+desde+' al '+hasta+' → '+tipo);
-  renderPlanilla();
+await cargarRegistros();
+renderPlanilla();
 }
 
 async function editarCelda(){
