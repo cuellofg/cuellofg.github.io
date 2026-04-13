@@ -10,6 +10,30 @@
 </head>
 <body>
 <div class="app">
+  
+  <div id="sc-turno-login" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Volver</span>
+  <h2>Acceso jefe de turno</h2>
+  <div class="card">
+    <label>Contraseña de turno</label>
+    <div style="position:relative;margin-bottom:.65rem;">
+      <input type="password" id="inp-turno-login-pass" placeholder="Contraseña de tu turno" style="padding-right:44px;margin-bottom:0;">
+      <button onclick="togglePass('inp-turno-login-pass',this)" type="button" style="position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;width:28px;height:28px;display:flex;align-items:center;justify-content:center;color:#94a3b8;">
+        <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+      </button>
+    </div>
+    <div id="turno-login-err" class="alert alert-err" style="display:none;"></div>
+    <button class="btn btn-amber" onclick="doTurnoLogin()">Entrar</button>
+  </div>
+</div>
+
+<div id="sc-turno-planilla" class="screen">
+  <span class="back" onclick="goTo('sc-home')">← Salir</span>
+  <h2 id="turno-titulo">Planilla del turno</h2>
+  <div class="planilla-wrap" id="planilla-turno-container">
+    <div class="loader"><div class="spinner"></div><br>Cargando...</div>
+  </div>
+</div>
 
 <div id="sc-home" class="screen active">
   <div style="text-align:center;padding:2.5rem 0 1.5rem;">
@@ -19,6 +43,7 @@
   </div>
   <button class="btn btn-green" onclick="iniciarLogin()">Registrar mi asistencia</button>
   <button class="btn btn-blue" onclick="goTo('sc-admin-login')">Panel de administrador</button>
+  <button class="btn btn-amber" onclick="iniciarLoginTurno()">Acceso jefe de turno</button>
 </div>
 
 <div id="sc-login" class="screen">
@@ -95,6 +120,7 @@
     <div class="tab" onclick="switchTab('tab-rangos',this)">Rangos</div>
     <div class="tab" onclick="switchTab('tab-config',this)">Configurar</div>
     <div class="tab" onclick="switchTab('tab-export',this)">Exportar</div>
+    <div class="tab" onclick="switchTab('tab-turnos',this)">Turnos</div>
   </div>
 
   <div id="tab-planilla">
@@ -178,6 +204,29 @@
       <div id="lista-tipos" style="margin-top:.75rem;"></div>
     </div>
   </div>
+
+  <div id="tab-turnos" style="display:none;">
+  <div class="card">
+    <h3>Crear turno</h3>
+    <div class="grid2">
+      <div><label>Nombre del turno</label><input type="text" id="inp-turno-nombre" placeholder="Ej: Turno 1"></div>
+      <div><label>Contraseña</label><input type="text" id="inp-turno-pass" placeholder="Ej: Turno1pass"></div>
+    </div>
+    <button class="btn btn-green" onclick="agregarTurno()">Crear turno</button>
+  </div>
+  <div class="card">
+    <h3>Asignar persona a turno</h3>
+    <div class="grid2">
+      <div><label>Turno</label><select id="turno-sel-turno"></select></div>
+      <div><label>Persona</label><select id="turno-sel-persona"></select></div>
+    </div>
+    <button class="btn btn-blue" onclick="agregarPersonaATurno()">Asignar persona</button>
+  </div>
+  <div class="card">
+    <h3>Turnos creados</h3>
+    <div id="lista-turnos"><div class="loader"><div class="spinner"></div><br>Cargando...</div></div>
+  </div>
+</div>
 
   <div id="tab-export" style="display:none;">
     <div class="card">

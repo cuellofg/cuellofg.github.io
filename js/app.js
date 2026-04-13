@@ -16,6 +16,7 @@ let cfg=JSON.parse(localStorage.getItem('grd_cfg')||'null')||{
 };
 let personal=[];
 let registros={};
+let turnos=[];
 let usuarioActual=null;
 let tipoSel=null;
 
@@ -236,6 +237,7 @@ async function doAdminLogin(){
   await cargarConfig();
   await cargarPersonal();
   await cargarRegistros();
+  await cargarTurnos();
   const mesActual=new Date().toLocaleString('es-AR',{month:'long',year:'numeric'}).toUpperCase();
   if(!cfg.mes.toUpperCase().includes(new Date().toLocaleString('es-AR',{month:'long'}).toUpperCase())){
     setTimeout(()=>{
@@ -244,7 +246,7 @@ async function doAdminLogin(){
       }
     },500);
   }
-  renderAll();
+  function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();renderTurnos();}
 }
 
 function switchTab(id,el){
@@ -257,6 +259,7 @@ function switchTab(id,el){
   if(id==='tab-personal')renderPersonal();
   if(id==='tab-rangos')renderRangos();
   if(id==='tab-config')renderConfig();
+  if(id==='tab-turnos')renderTurnos();
 }
 
 function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();}
@@ -468,6 +471,118 @@ async function reiniciarMes(){
   registros={};
   alert('Mes archivado y reiniciado correctamente.');
   renderPlanilla();
+}
+
+async function cargarTurnos(){
+  const data=await apiGet('turnos');
+  turnos=data.filter(d=>d.nombre);
+}
+
+function renderTurnos(){
+  const c=document.getElementById('lista-turnos');
+  if(!c)return;
+  if(!turnos.length){c.innerHTML='<p style="font-size:13px;color:#64748b;">Sin turnos creados.</p>';return;}
+  c.innerHTML=turnos.map((t,i)=>
+    '<div class="row-between">'+
+    '<div style="flex:1;min-width:0;">'+
+    '<div style="font-size:13px;font-weight:600;">'+t.nombre+'</div>'+
+    '<div style="font-size:11px;color:#64748b;">Personal: '+t.personal.length+' personas</div>'+
+    '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">'+t.pass+'</span></div>'+
+    '</div>'+
+    '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">'+
+    '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTurno('+i+')">Quitar</span>'+
+    '</div></div>'
+  ).join('');
+  // llenar selector de personal por turno
+  const sel=document.getElementById('turno-sel-turno');
+  if(sel){
+    sel.innerHTML='<option value="">Selecciona turno</option>';
+    turnos.forEach((t,i)=>{const o=document.createElement('option');o.value=i;o.textContent=t.nombre;sel.appendChild(o);});
+  }
+  llenarPersonas('turno-sel-persona');
+}
+
+async function agregarTurno(){
+  const nombre=sanitize(document.getElementById('inp-turno-nombre').value);
+  const pass=sanitize(document.getElementById('inp-turno-pass').value);
+  if(!nombre||!pass){alert('Completa nombre y contraseña del turno.');return;}
+  if(pass.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
+  if(turnos.find(t=>t.nombre===nombre)){alert('Ya existe ese turno.');return;}
+  const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
+  await apiPost({id,nombre,pass,personal:[]},'turno');
+  turnos.push({id,nombre,pass,personal:[]});
+  document.getElementById('inp-turno-nombre').value='';
+  document.getElementById('inp-turno-pass').value='';
+  renderTurnos();
+}
+
+async function agregarPersonaATurno(){
+  const turnoIdx=document.getElementById('turno-sel-turno').value;
+  const persona=document.getElementById('turno-sel-persona').value;
+  if(turnoIdx===''||!persona){alert('Selecciona turno y persona.');return;}
+  const t=turnos[turnoIdx];
+  if(t.personal.includes(persona)){alert('Esa persona ya está en el turno.');return;}
+  t.personal.push(persona);
+  await apiPost({...t},'turno');
+  renderTurnos();
+  alert('Persona agregada al '+t.nombre);
+}
+
+async function eliminarTurno(i){
+  if(!confirm('Quitar el turno "'+turnos[i].nombre+'"?'))return;
+  await apiDelete({id:turnos[i].id},'turno');
+  turnos.splice(i,1);
+  renderTurnos();
+}
+
+// Login jefe de turno
+async function iniciarLoginTurno(){
+  goTo('sc-turno-login');
+}
+
+async function doTurnoLogin(){
+  const pass=document.getElementById('inp-turno-login-pass').value;
+  const err=document.getElementById('turno-login-err');
+  if(!pass){err.textContent='Ingresa la contraseña.';err.style.display='block';return;}
+  await cargarTurnos();
+  const turno=turnos.find(t=>t.pass===pass);
+  if(!turno){err.textContent='Contraseña incorrecta.';err.style.display='block';return;}
+  err.style.display='none';
+  document.getElementById('inp-turno-login-pass').value='';
+  await cargarConfig();
+  await cargarRegistros();
+  renderPlanillaTurno(turno);
+  document.getElementById('turno-titulo').textContent='Planilla — '+turno.nombre;
+  goTo('sc-turno-planilla');
+}
+
+function renderPlanillaTurno(turno){
+  const c=document.getElementById('planilla-turno-container');
+  const personalTurno=personal.filter(p=>turno.personal.includes(p.nombre));
+  if(!personalTurno.length){c.innerHTML='<p style="font-size:13px;color:#64748b;padding:1rem;">Sin personal asignado a este turno.</p>';return;}
+  const inicio=parseInt(cfg.inicioSem)||0;
+  let h='<table><thead><tr><th class="col-fixed">Apellido y Nombre</th>';
+  for(let d=1;d<=cfg.dias;d++){
+    const semIdx=(inicio+d-1)%7;
+    const ds=DIAS_SEM[semIdx];
+    const esFinde=semIdx===0||semIdx===6;
+    h+='<th style="min-width:24px;'+(esFinde?'color:#ef4444;background:#fff5f5;':'')+'">'+d+'<br><span style="font-size:9px;font-weight:400;">'+ds+'</span></th>';
+  }
+  h+='</tr></thead><tbody>';
+  personalTurno.forEach(p=>{
+    h+='<tr><td class="col-fixed">'+p.nombre+'</td>';
+    for(let d=1;d<=cfg.dias;d++){
+      const v=registros[p.nombre]&&registros[p.nombre][d]?registros[p.nombre][d]:'';
+      const t=cfg.tipos.find(x=>x.cod===v);
+      const col=t?t.color:'';
+      const semIdx=(inicio+d-1)%7;
+      const esFinde=semIdx===0||semIdx===6;
+      h+='<td style="color:'+col+';font-weight:'+(v?'700':'400')+';background:'+(esFinde?'#fff5f5':'')+';"><span translate="no">'+v+'</span></td>';
+    }
+    h+='</tr>';
+  });
+  h+='</tbody></table>';
+  c.innerHTML=h;
 }
 
 goTo('sc-home');
