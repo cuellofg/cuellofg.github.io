@@ -246,13 +246,13 @@ async function doAdminLogin(){
       }
     },500);
   }
-  function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();renderTurnos();}
+  renderAll();
 }
 
 function switchTab(id,el){
   document.querySelectorAll('.tabs .tab').forEach(t=>t.classList.remove('active'));
   if(el)el.classList.add('active');
-  ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-export'].forEach(t=>{
+  ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-turnos','tab-export'].forEach(t=>{
     document.getElementById(t).style.display=t===id?'block':'none';
   });
   if(id==='tab-planilla')renderPlanilla();
@@ -262,7 +262,7 @@ function switchTab(id,el){
   if(id==='tab-turnos')renderTurnos();
 }
 
-function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();}
+function renderAll(){renderPlanilla();renderPersonal();renderRangos();renderConfig();renderTurnos();}
 
 function renderPlanilla(){
   const c=document.getElementById('planilla-container');
