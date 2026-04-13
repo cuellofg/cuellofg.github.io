@@ -508,12 +508,16 @@ async function agregarTurno(){
   if(!nombre||!pass){alert('Completa nombre y contraseña del turno.');return;}
   if(pass.length<4){alert('La contraseña debe tener al menos 4 caracteres.');return;}
   if(turnos.find(t=>t.nombre===nombre)){alert('Ya existe ese turno.');return;}
+  const btn=document.querySelector('[onclick="agregarTurno()"]');
+  btn.textContent='Guardando...';btn.disabled=true;
   const id=nombre.replace(/[^a-zA-Z0-9]/g,'_');
   await apiPost({id,nombre,pass,personal:[]},'turno');
   turnos.push({id,nombre,pass,personal:[]});
   document.getElementById('inp-turno-nombre').value='';
   document.getElementById('inp-turno-pass').value='';
+  btn.textContent='Crear turno';btn.disabled=false;
   renderTurnos();
+  alert('Turno "'+nombre+'" creado correctamente.');
 }
 
 async function agregarPersonaATurno(){
@@ -522,8 +526,11 @@ async function agregarPersonaATurno(){
   if(turnoIdx===''||!persona){alert('Selecciona turno y persona.');return;}
   const t=turnos[turnoIdx];
   if(t.personal.includes(persona)){alert('Esa persona ya está en el turno.');return;}
+  const btn=document.querySelector('[onclick="agregarPersonaATurno()"]');
+  btn.textContent='Guardando...';btn.disabled=true;
   t.personal.push(persona);
   await apiPost({...t},'turno');
+  btn.textContent='Asignar persona';btn.disabled=false;
   renderTurnos();
   alert('Persona agregada al '+t.nombre);
 }
