@@ -1,6 +1,6 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-const ADMIN_PASS = 'Admin2026';
+const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
 const DIAS_SEM = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 let cfg = JSON.parse(localStorage.getItem('grd_cfg') || 'null') || {
@@ -1053,6 +1053,21 @@ function renderPlanillaTurno(turno) {
     });
     h += '</tbody></table>';
     c.innerHTML = h;
+}
+
+function cambiarPassAdmin(){
+  const actual=prompt('Ingresa la contraseña actual:','');
+  if(actual===null)return;
+  const passGuardada=localStorage.getItem('admin_pass')||'Admin2026';
+  if(actual!==passGuardada){alert('Contraseña actual incorrecta.');return;}
+  const nueva=prompt('Ingresa la nueva contraseña (min. 6 caracteres):','');
+  if(nueva===null)return;
+  if(nueva.trim().length<6){alert('La contraseña debe tener al menos 6 caracteres.');return;}
+  const confirmar=prompt('Confirmá la nueva contraseña:','');
+  if(confirmar===null)return;
+  if(nueva.trim()!==confirmar.trim()){alert('Las contraseñas no coinciden.');return;}
+  localStorage.setItem('admin_pass',nueva.trim());
+  alert('Contraseña cambiada correctamente.');
 }
 
 goTo('sc-home');
