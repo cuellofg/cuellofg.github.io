@@ -1088,3 +1088,10 @@ async function quitarPersonaDeTurno(turnoIdx, personaIdx) {
 }
 
 goTo('sc-home');
+
+// Mantener Azure despierto cuando la app esta abierta
+function keepAliveAzure() {
+    fetch(API_URL, { signal: AbortSignal.timeout(10000) }).catch(() => {});
+}
+setInterval(keepAliveAzure, 4 * 60 * 1000);
+keepAliveAzure();
