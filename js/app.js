@@ -869,33 +869,31 @@ function renderTurnos() {
     const c = document.getElementById('lista-turnos');
     if (!c) return;
     if (!turnos.length) {
-        c.innerHTML =
-            '<p style="font-size:13px;color:#64748b;">Sin turnos creados.</p>';
+        c.innerHTML = '<p style="font-size:13px;color:#64748b;">Sin turnos creados.</p>';
         return;
     }
-    c.innerHTML = turnos
-        .map(
-            (t, i) =>
-                '<div class="row-between">' +
-                '<div style="flex:1;min-width:0;">' +
-                '<div style="font-size:13px;font-weight:600;">' +
-                t.nombre +
-                '</div>' +
-                '<div style="font-size:11px;color:#64748b;">Personal: ' +
-                t.personal.length +
-                ' personas</div>' +
-                '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">' +
-                t.pass +
-                '</span></div>' +
-                '</div>' +
-                '<div style="display:flex;gap:8px;align-items:center;flex-shrink:0;">' +
-                '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTurno(' +
-                i +
-                ')">Quitar</span>' +
-                '</div></div>',
-        )
-        .join('');
-    // llenar selector de personal por turno
+    c.innerHTML = turnos.map((t, i) =>
+        '<div class="card" style="margin-bottom:.75rem;">' +
+        '<div class="row-between" style="margin-bottom:.5rem;">' +
+        '<div>' +
+        '<div style="font-size:14px;font-weight:600;">' + t.nombre + '</div>' +
+        '<div style="font-size:11px;color:#64748b;">' + t.personal.length + ' personas · Pass: <span class="pass-chip" translate="no">' + t.pass + '</span></div>' +
+        '</div>' +
+        '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarTurno(' + i + ')">Eliminar turno</span>' +
+        '</div>' +
+        '<div style="border-top:1px solid #f1f5f9;padding-top:.6rem;">' +
+        (t.personal.length === 0 ? '<p style="font-size:12px;color:#64748b;">Sin personal asignado.</p>' :
+        t.personal.map((nombre, pi) =>
+            '<div class="row-between" style="padding:5px 0;">' +
+            '<span style="font-size:12px;">' + nombre + '</span>' +
+            '<div style="display:flex;gap:6px;align-items:center;">' +
+            '<span style="cursor:pointer;font-size:14px;' + (pi === 0 ? 'opacity:.25;pointer-events:none;' : '') + '" onclick="moverPersonaEnTurno(' + i + ',' + pi + ',-1)">↑</span>' +
+            '<span style="cursor:pointer;font-size:14px;' + (pi === t.personal.length - 1 ? 'opacity:.25;pointer-events:none;' : '') + '" onclick="moverPersonaEnTurno(' + i + ',' + pi + ',1)">↓</span>' +
+            '<span style="cursor:pointer;color:#ef4444;font-size:11px;font-weight:600;" onclick="quitarPersonaDeTurno(' + i + ',' + pi + ')">Quitar</span>' +
+            '</div></div>'
+        ).join('')) +
+        '</div></div>'
+    ).join('');
     const sel = document.getElementById('turno-sel-turno');
     if (sel) {
         sel.innerHTML = '<option value="">Selecciona turno</option>';
@@ -1068,6 +1066,25 @@ function cambiarPassAdmin(){
   if(nueva.trim()!==confirmar.trim()){alert('Las contraseñas no coinciden.');return;}
   localStorage.setItem('admin_pass',nueva.trim());
   alert('Contraseña cambiada correctamente.');
+}
+
+async function moverPersonaEnTurno(turnoIdx, personaIdx, dir) {
+    const t = turnos[turnoIdx];
+    const j = personaIdx + dir;
+    if (j < 0 || j >= t.personal.length) return;
+    [t.personal[personaIdx], t.personal[j]] = [t.personal[j], t.personal[personaIdx]];
+    await apiPost({ ...t }, 'turno');
+    renderTurnos();
+}
+
+async function quitarPersonaDeTurno(turnoIdx, personaIdx) {
+    const t = turnos[turnoIdx];
+    const nombre = t.personal[personaIdx];
+    if (!confirm('Quitar a ' + nombre + ' del ' + t.nombre + '?')) return;
+    t.personal.splice(personaIdx, 1);
+    await apiPost({ ...t }, 'turno');
+    renderTurnos();
+    alert(nombre + ' quitado del turno.');
 }
 
 goTo('sc-home');
