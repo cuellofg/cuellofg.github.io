@@ -813,24 +813,88 @@ async function eliminarTipo(i) {
 }
 
 function exportarCSV() {
-    let csv = 'Apellido y Nombre';
-    for (let d = 1; d <= cfg.dias; d++) csv += ',' + d;
-    csv += '\n';
+    const inicio = parseInt(cfg.inicioSem) || 0;
+    const datos = [];
+    
+    // Encabezados
+    const header = ['Apellido y Nombre'];
+    for (let d = 1; d <= cfg.dias; d++) {
+        const semIdx = (inicio + d - 1) % 7;
+        header.push(d + ' (' + DIAS_SEM[semIdx] + ')');
+    }
+    datos.push(header);
+    
+    // Filas de personal
     personal.forEach((p) => {
-        csv += '"' + p.nombre + '"';
-        for (let d = 1; d <= cfg.dias; d++)
-            csv +=
-                ',' +
-                (registros[p.nombre] && registros[p.nombre][d]
-                    ? registros[p.nombre][d]
-                    : '');
-        csv += '\n';
+        const fila = [p.nombre];
+        for (let d = 1; d <= cfg.dias; d++) {
+            fila.push(registros[p.nombre] && registros[p.nombre][d] ? registros[p.nombre][d] : '');
+        }
+        datos.push(fila);
     });
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
-    a.download = 'Guardias_' + cfg.mes.replace(/ /g, '_') + '.csv';
-    a.click();
+    
+    // Crear hoja
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    
+    // Anchos de columna
+    ws['!cols'] = [{wch: 30}];
+    for (let d = 1; d <= cfg.dias; d++) ws['!cols'].push({wch: 7});
+    
+    // Aplicar colores y estilos
+    const range = XLSX.utils.decode_range(ws['!ref']);
+    for (let R = range.s.r; R <= range.e.r; R++) {
+        for (let C = range.s.c; C <= range.e.c; C++) {
+            const cellAddr = XLSX.utils.encode_cell({r: R, c: C});
+            if (!ws[cellAddr]) continue;
+            
+            // Encabezado
+            if (R === 0) {
+                ws[cellAddr].s = {
+                    font: {bold: true, color: {rgb: 'FFFFFF'}},
+                    fill: {fgColor: {rgb: '1A1A2E'}},
+                    alignment: {horizontal: 'center', vertical: 'center'},
+                    border: {top: {style: 'thin'}, bottom: {style: 'thin'}, left: {style: 'thin'}, right: {style: 'thin'}}
+                };
+                // Fines de semana en encabezado
+                if (C > 0) {
+                    const semIdx = (inicio + C - 1) % 7;
+                    if (semIdx === 0 || semIdx === 6) {
+                        ws[cellAddr].s.fill = {fgColor: {rgb: '991B1B'}};
+                    }
+                }
+            } else {
+                // Celda de nombre
+                if (C === 0) {
+                    ws[cellAddr].s = {
+                        font: {bold: true},
+                        alignment: {horizontal: 'left', vertical: 'center'},
+                        border: {top: {style: 'thin'}, bottom: {style: 'thin'}, left: {style: 'thin'}, right: {style: 'thin'}}
+                    };
+                } else {
+                    // Celda de tipo de asistencia con color
+                    const valor = ws[cellAddr].v;
+                    const tipo = cfg.tipos.find(t => t.cod === valor);
+                    const semIdx = (inicio + C - 1) % 7;
+                    const esFinde = semIdx === 0 || semIdx === 6;
+                    
+                    ws[cellAddr].s = {
+                        font: {
+                            bold: !!valor,
+                            color: tipo ? {rgb: tipo.color.replace('#', '')} : {rgb: '000000'}
+                        },
+                        fill: {fgColor: {rgb: esFinde ? 'FEF2F2' : 'FFFFFF'}},
+                        alignment: {horizontal: 'center', vertical: 'center'},
+                        border: {top: {style: 'thin'}, bottom: {style: 'thin'}, left: {style: 'thin'}, right: {style: 'thin'}}
+                    };
+                }
+            }
+        }
+    }
+    
+    // Crear libro y descargar
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, cfg.mes);
+    XLSX.writeFile(wb, 'Guardias_' + cfg.mes.replace(/ /g, '_') + '.xlsx');
 }
 
 async function reiniciarMes() {
