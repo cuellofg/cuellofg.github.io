@@ -380,22 +380,11 @@ async function doAdminLogin() {
         return;
     }
 
-const pass = document.getElementById('inp-admin-pass').value;
+    const pass = document.getElementById('inp-admin-pass').value;
     const err = document.getElementById('admin-err');
     const esAdmin = pass === ADMIN_PASS;
     const esConsulta = pass === CONSULTA_PASS;
     if (!esAdmin && !esConsulta) {
-        const restante = Math.ceil(
-            (JSON.parse(localStorage.getItem('admin_block')).until -
-                Date.now()) /
-                60000,
-        );
-        alert('Demasiados intentos. Espera ' + restante + ' minuto(s).');
-        return;
-    }
-    const pass = document.getElementById('inp-admin-pass').value;
-    const err = document.getElementById('admin-err');
-    if (pass !== ADMIN_PASS) {
         const nuevoCount = bl.count + 1;
         const bloqueado = nuevoCount >= MAX_INTENTOS;
         setBloqueo('admin_block', nuevoCount, bloqueado);
