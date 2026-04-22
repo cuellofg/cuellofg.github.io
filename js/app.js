@@ -1,6 +1,8 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
 const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
+let CONSULTA_PASS='Consulta2026';
+let modoConsulta=false;
 const DIAS_SEM = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
 let cfg = JSON.parse(localStorage.getItem('grd_cfg') || 'null') || {
@@ -377,6 +379,20 @@ async function doAdminLogin() {
         alert('Demasiados intentos. Espera ' + restante + ' minuto(s).');
         return;
     }
+
+const pass = document.getElementById('inp-admin-pass').value;
+    const err = document.getElementById('admin-err');
+    const esAdmin = pass === ADMIN_PASS;
+    const esConsulta = pass === CONSULTA_PASS;
+    if (!esAdmin && !esConsulta) {
+        const restante = Math.ceil(
+            (JSON.parse(localStorage.getItem('admin_block')).until -
+                Date.now()) /
+                60000,
+        );
+        alert('Demasiados intentos. Espera ' + restante + ' minuto(s).');
+        return;
+    }
     const pass = document.getElementById('inp-admin-pass').value;
     const err = document.getElementById('admin-err');
     if (pass !== ADMIN_PASS) {
@@ -397,6 +413,13 @@ async function doAdminLogin() {
     err.style.display = 'none';
     document.getElementById('inp-admin-pass').value = '';
     goTo('sc-admin');
+    
+      modoConsulta = esConsulta;
+    const tabs = document.querySelectorAll('.tabs .tab');
+    tabs.forEach((tab, i) => {
+        tab.style.display = modoConsulta && i > 0 ? 'none' : '';
+    });
+
     await cargarConfig();
     await cargarPersonal();
     await cargarRegistros();
