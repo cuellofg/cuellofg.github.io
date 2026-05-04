@@ -448,12 +448,7 @@ function switchTab(id, el) {
         .forEach((t) => t.classList.remove('active'));
     if (el) el.classList.add('active');
     [
-        'tab-planilla',
-        'tab-personal',
-        'tab-rangos',
-        'tab-config',
-        'tab-turnos',
-        'tab-export',
+        ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-turnos','tab-export','tab-historial']
     ].forEach((t) => {
         document.getElementById(t).style.display = t === id ? 'block' : 'none';
     });
@@ -462,6 +457,7 @@ function switchTab(id, el) {
     if (id === 'tab-rangos') renderRangos();
     if (id === 'tab-config') renderConfig();
     if (id === 'tab-turnos') renderTurnos();
+    if (id === 'tab-historial') renderHistorial();
 }
 
 function renderAll() {
@@ -1161,6 +1157,74 @@ async function quitarPersonaDeTurno(turnoIdx, personaIdx) {
     await apiPost({ ...t }, 'turno');
     renderTurnos();
     alert(nombre + ' quitado del turno.');
+}
+
+let archivosCache = [];
+
+async function cargarArchivos() {
+    const data = await apiGet('archivos');
+    archivosCache = data.filter(d => d.mes);
+    archivosCache.sort((a, b) => new Date(b.fecha) - new Date(a.fecha));
+}
+
+async function renderHistorial() {
+    const c = document.getElementById('lista-historial');
+    c.innerHTML = '<div class="loader"><div class="spinner"></div><br>Cargando...</div>';
+    await cargarArchivos();
+    if (!archivosCache.length) {
+        c.innerHTML = '<p style="font-size:13px;color:#64748b;">No hay meses archivados.</p>';
+        return;
+    }
+    c.innerHTML = archivosCache.map((a, i) => {
+        const fecha = new Date(a.fecha).toLocaleDateString('es-AR');
+        return '<div class="row-between" style="padding:10px 0;">' +
+            '<div>' +
+            '<div style="font-size:14px;font-weight:600;">' + a.mes + '</div>' +
+            '<div style="font-size:11px;color:#64748b;">Archivado el ' + fecha + ' · ' + (a.personal ? a.personal.length : 0) + ' personas</div>' +
+            '</div>' +
+            '<div style="display:flex;gap:8px;">' +
+            '<span style="cursor:pointer;color:#3b82f6;font-size:12px;font-weight:600;" onclick="descargarHistorial(' + i + ')">Descargar Excel</span>' +
+            '<span style="cursor:pointer;color:#ef4444;font-size:12px;font-weight:600;" onclick="eliminarHistorial(' + i + ')">Eliminar</span>' +
+            '</div></div>';
+    }).join('');
+}
+
+function descargarHistorial(i) {
+    const archivo = archivosCache[i];
+    const inicio = parseInt(cfg.inicioSem) || 0;
+    const datos = [];
+    
+    const header = ['Apellido y Nombre'];
+    const dias = archivo.dias || 31;
+    for (let d = 1; d <= dias; d++) {
+        const semIdx = (inicio + d - 1) % 7;
+        header.push(d + ' (' + DIAS_SEM[semIdx] + ')');
+    }
+    datos.push(header);
+    
+    (archivo.personal || []).forEach(p => {
+        const fila = [p.nombre];
+        for (let d = 1; d <= dias; d++) {
+            fila.push(archivo.registros && archivo.registros[p.nombre] && archivo.registros[p.nombre][d] ? archivo.registros[p.nombre][d] : '');
+        }
+        datos.push(fila);
+    });
+    
+    const ws = XLSX.utils.aoa_to_sheet(datos);
+    ws['!cols'] = [{wch: 30}];
+    for (let d = 1; d <= dias; d++) ws['!cols'].push({wch: 7});
+    
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, archivo.mes.substring(0, 30));
+    XLSX.writeFile(wb, 'Historial_' + archivo.mes.replace(/ /g, '_') + '.xlsx');
+}
+
+async function eliminarHistorial(i) {
+    const archivo = archivosCache[i];
+    if (!confirm('Eliminar permanentemente el archivo de "' + archivo.mes + '"? Esta accion no se puede deshacer.')) return;
+    await apiDelete({ id: archivo.id, mes: archivo.mes }, 'archivo');
+    archivosCache.splice(i, 1);
+    renderHistorial();
 }
 
 goTo('sc-home');

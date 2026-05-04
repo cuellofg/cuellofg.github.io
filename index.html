@@ -327,6 +327,10 @@
                     <div class="tab" onclick="switchTab('tab-export', this)">
                         Exportar
                     </div>
+
+                    <div class="tab" onclick="switchTab('tab-historial', this)">
+    Historial
+</div>
                     <!-- <div class="tab" onclick="switchTab('tab-turnos', this)">
                         Turnos
                     </div> -->
@@ -606,6 +610,16 @@
                         </div>
                     </div>
                 </div>
+
+                <div id="tab-historial" style="display: none">
+    <div class="card">
+        <h3>Meses archivados</h3>
+        <p style="font-size:13px;color:#64748b;margin-bottom:1rem;">Aqui podes ver y descargar los meses anteriores que ya archivaste.</p>
+        <div id="lista-historial">
+            <div class="loader"><div class="spinner"></div><br>Cargando...</div>
+        </div>
+    </div>
+</div>
 
                 <div id="tab-export" style="display: none">
                     <div class="card">
