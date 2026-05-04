@@ -448,7 +448,13 @@ function switchTab(id, el) {
         .forEach((t) => t.classList.remove('active'));
     if (el) el.classList.add('active');
     [
-        ['tab-planilla','tab-personal','tab-rangos','tab-config','tab-turnos','tab-export','tab-historial']
+        'tab-planilla',
+        'tab-personal',
+        'tab-rangos',
+        'tab-config',
+        'tab-turnos',
+        'tab-export',
+        'tab-historial'
     ].forEach((t) => {
         document.getElementById(t).style.display = t === id ? 'block' : 'none';
     });
