@@ -82,29 +82,31 @@
             </div>
 
             <div id="sc-home" class="screen active">
-                <div style="text-align: center; padding: 2.5rem 0 1.5rem">
-                    <div style="font-size: 48px; margin-bottom: 12px">📋🚒</div>
-                    <h2 style="font-size: 24px">Sistema de Guardias</h2>
-                    <p
-                        id="home-mes"
-                        style="
-                            font-size: 14px;
-                            color: #64748b;
-                            margin-top: 6px;
-                            font-weight: 500;
-                        "
-                    ></p>
-                </div>
-                <button class="btn btn-green" onclick="iniciarLogin()">
-                    Registrar mi asistencia
-                </button>
-                <button class="btn btn-blue" onclick="goTo('sc-admin-login')">
-                    Panel de administrador
-                </button>
+                <div style="background: #0F2A47; padding: 1.5rem 1rem 1.5rem; text-align: center; border-radius: 12px; margin-bottom: 1rem;">
+    <div style="font-size: 40px; margin-bottom: 8px;">📋🚒</div>
+    <h2 style="color: #fff; font-size: 22px; margin: 0 0 4px;">Sistema de Guardias</h2>
+    <p id="home-mes" style="color: rgba(255,255,255,0.7); font-size: 13px; margin: 0; font-weight: 500;"></p>
+</div>
+                <button class="btn" onclick="iniciarLogin()" style="background: #b91c1c; color: #fff;">
+    Registrar mi asistencia
+</button>
+<button class="btn" onclick="goTo('sc-admin-login')" style="background: transparent; color: #0F2A47; border: 1px solid #0F2A47;">
+    Panel de administrador
+</button>
                 <!-- <button class="btn btn-amber" onclick="iniciarLoginTurno()">
                     Acceso jefe de turno
                 </button> -->
+<div style="margin-top: 1rem; position: relative; border-radius: 12px; overflow: hidden;">
+    <img src="images/Bomberos.jpg" alt="Bomberos" style="width: 100%; height: 400px; object-fit: cover; display: block;">
+    <div style="position: absolute; top: 0; left: 0; bottom: 0; width: 20%; background: linear-gradient(to right, #f4f6f9 0%, transparent 100%); pointer-events: none;"></div>
+    <div style="position: absolute; top: 0; right: 0; bottom: 0; width: 20%; background: linear-gradient(to left, #f4f6f9 0%, transparent 100%); pointer-events: none;"></div>
+    <div style="position: absolute; bottom: 0; left: 0; right: 0; height: 30%; background: linear-gradient(to top, #f4f6f9 0%, transparent 100%); pointer-events: none;"></div>
+</div>
+
+
             </div>
+
+            
 
             <div id="sc-login" class="screen">
                 <span class="back" onclick="goTo('sc-home')">← Volver</span>
