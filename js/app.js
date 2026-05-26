@@ -1,6 +1,6 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-    const API_KEY = 'gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL';
+    const API_KEY = "gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL";
 const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
 let CONSULTA_PASS='Consulta2026';
 let modoConsulta=false;
