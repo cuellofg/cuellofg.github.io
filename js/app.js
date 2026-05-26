@@ -1,5 +1,6 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
+    const API_KEY = 'gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL';
 const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
 let CONSULTA_PASS='Consulta2026';
 let modoConsulta=false;
@@ -56,7 +57,10 @@ async function apiGet(tipo) {
         const url = tipo
             ? API_URL + '?tipo=' + encodeURIComponent(tipo)
             : API_URL;
-        const r = await fetch(url, { signal: AbortSignal.timeout(30000) });
+        const r = await fetch(url, {
+            headers: { 'X-API-Key': API_KEY },
+            signal: AbortSignal.timeout(30000)
+        });
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return await r.json();
     } catch (e) {
@@ -76,7 +80,10 @@ async function apiPost(data, tipo) {
             : API_URL;
         const r = await fetch(url, {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': API_KEY
+            },
             body: JSON.stringify(data),
             signal: AbortSignal.timeout(30000),
         });
@@ -93,7 +100,10 @@ async function apiDelete(data, tipo) {
             : API_URL;
         const r = await fetch(url, {
             method: 'DELETE',
-            headers: { 'Content-Type': 'application/json' },
+            headers: {
+                'Content-Type': 'application/json',
+                'X-API-Key': API_KEY
+            },
             body: JSON.stringify(data),
             signal: AbortSignal.timeout(30000),
         });
@@ -1237,7 +1247,10 @@ goTo('sc-home');
 
 // Mantener Azure despierto cuando la app esta abierta
 function keepAliveAzure() {
-    fetch(API_URL, { signal: AbortSignal.timeout(10000) }).catch(() => {});
+    fetch(API_URL, {
+        headers: { 'X-API-Key': API_KEY },
+        signal: AbortSignal.timeout(10000)
+    }).catch(() => {});
 }
 setInterval(keepAliveAzure, 4 * 60 * 1000);
 keepAliveAzure();
