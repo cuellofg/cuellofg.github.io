@@ -1,6 +1,15 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
     const API_KEY = "gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL";
+
+async function hashPassword(password) {
+    const encoder = new TextEncoder();
+    const data = encoder.encode(password.trim());
+    const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+    const hashArray = Array.from(new Uint8Array(hashBuffer));
+    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+}
+
 const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
 let CONSULTA_PASS='Consulta2026';
 let modoConsulta=false;
@@ -237,7 +246,7 @@ function setBloqueo(key, count, blocked) {
     );
 }
 
-function doLogin() {
+async function doLogin() {
     const bl = getBloqueo('login_block');
     if (bl.blocked) {
         const restante = Math.ceil(
@@ -265,7 +274,8 @@ function doLogin() {
         return;
     }
     const p = personal[idx];
-    if (p.pass !== pass) {
+    const passHash = await hashPassword(pass);
+    if (p.pass !== passHash) {
         const nuevoCount = bl.count + 1;
         const bloqueado = nuevoCount >= MAX_INTENTOS;
         setBloqueo('login_block', nuevoCount, bloqueado);
@@ -555,9 +565,7 @@ function renderPersonal() {
                 ' · L.P.: ' +
                 p.lp +
                 '</div>' +
-                '<div style="font-size:11px;margin-top:2px;">Pass: <span class="pass-chip" translate="no">' +
-                p.pass +
-                '</span></div>' +
+                '<div style="font-size:11px;margin-top:2px;color:#10b981;">🔒 Contraseña cifrada</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">' +
                 '<span style="cursor:pointer;font-size:18px;' +
@@ -602,8 +610,9 @@ async function agregarPersona() {
     }
     const id = nombre.replace(/[^a-zA-Z0-9]/g, '_');
     const orden = personal.length;
-    await apiPost({ id, grado, lp, nombre, pass, orden }, 'personal');
-    personal.push({ id, grado, lp, nombre, pass, orden });
+    const passHash = await hashPassword(pass);
+    await apiPost({ id, grado, lp, nombre, pass: passHash, orden }, 'personal');
+    personal.push({ id, grado, lp, nombre, pass: passHash, orden });
     ['inp-grado', 'inp-lp', 'inp-nombre', 'inp-new-pass'].forEach(
         (i) => (document.getElementById(i).value = ''),
     );
@@ -615,25 +624,26 @@ async function agregarPersona() {
 
 async function editarPersona(i) {
     const p = personal[i];
-    const nuevoNombre = prompt(
-        'Apellido y Nombre (actual: ' + p.nombre + '):',
-        p.nombre,
-    );
+    const nuevoNombre = prompt('Apellido y Nombre (actual: ' + p.nombre + '):', p.nombre);
     if (nuevoNombre === null) return;
-    const nuevoPass = prompt('Contraseña (actual: ' + p.pass + '):', p.pass);
+    const nuevoPass = prompt('Nueva contraseña (dejar vacío para no cambiar):', '');
     if (nuevoPass === null) return;
-    if (!nuevoNombre.trim() || !nuevoPass.trim()) {
-        alert('Ningun campo puede estar vacio.');
+    if (!nuevoNombre.trim()) {
+        alert('El nombre no puede estar vacío.');
         return;
     }
-    if (nuevoPass.trim().length < 4) {
-        alert('La contraseña debe tener al menos 4 caracteres.');
-        return;
+    let passFinal = personal[i].pass;
+    if (nuevoPass.trim()) {
+        if (nuevoPass.trim().length < 4) {
+            alert('La contraseña debe tener al menos 4 caracteres.');
+            return;
+        }
+        passFinal = await hashPassword(nuevoPass.trim());
     }
     personal[i] = {
         ...personal[i],
         nombre: sanitize(nuevoNombre),
-        pass: sanitize(nuevoPass),
+        pass: passFinal,
     };
     await apiPost({ ...personal[i] }, 'personal');
     renderPersonal();
@@ -1241,6 +1251,33 @@ async function eliminarHistorial(i) {
     await apiDelete({ id: archivo.id, mes: archivo.mes }, 'archivo');
     archivosCache.splice(i, 1);
     renderHistorial();
+}
+
+async function migrarPasswordsAHash() {
+    if (!confirm('Esto va a cifrar todas las contraseñas existentes. Solo hay que ejecutarlo UNA vez. ¿Continuar?')) return;
+    
+    const btn = document.querySelector('[onclick="migrarPasswordsAHash()"]');
+    btn.textContent = 'Cifrando...';
+    btn.disabled = true;
+    
+    let cifradas = 0;
+    let yaCifradas = 0;
+    
+    for (const p of personal) {
+        if (p.pass && p.pass.length === 64 && /^[a-f0-9]+$/.test(p.pass)) {
+            yaCifradas++;
+            continue;
+        }
+        const passHash = await hashPassword(p.pass);
+        p.pass = passHash;
+        await apiPost({ ...p }, 'personal');
+        cifradas++;
+    }
+    
+    btn.textContent = '🔒 Migrar contraseñas a cifrado (ejecutar una sola vez)';
+    btn.disabled = false;
+    alert('Listo!\n\n' + cifradas + ' contraseñas cifradas.\n' + yaCifradas + ' ya estaban cifradas.');
+    renderPersonal();
 }
 
 goTo('sc-home');
