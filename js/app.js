@@ -91,7 +91,7 @@ async function apiGet(tipo) {
         if (!r.ok) throw new Error('HTTP ' + r.status);
         return await r.json();
     } catch (e) {
-        console.error('Error GET:', e);
+        console.error('Error en la solicitud');
         return [];
     }
 }
@@ -116,7 +116,7 @@ async function apiPost(data, tipo) {
         });
         if (!r.ok) throw new Error('HTTP ' + r.status);
     } catch (e) {
-        console.error('Error POST:', e);
+        console.error('Error en la solicitud');
     }
 }
 
@@ -136,7 +136,7 @@ async function apiDelete(data, tipo) {
         });
         if (!r.ok) throw new Error('HTTP ' + r.status);
     } catch (e) {
-        console.error('Error DELETE:', e);
+        console.error('Error en la solicitud');
     }
 }
 
