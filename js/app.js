@@ -1181,7 +1181,7 @@ function renderPlanillaTurno(turno) {
     c.innerHTML = h;
 }
 
-function cambiarPassAdmin(){
+async function cambiarPassAdmin(){
   const actual=prompt('Ingresa la contraseña actual:','');
   if(actual===null)return;
   const passGuardada=localStorage.getItem('admin_pass')||'Admin2026';
