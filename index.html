@@ -347,8 +347,12 @@
                     </div>
 
                     <div class="tab" onclick="switchTab('tab-historial', this)">
-    Historial
-</div>
+                        Historial
+                    </div>
+
+                    <div class="tab" onclick="switchTab('tab-auditoria', this)">
+                        Auditoría
+                    </div>
                     <!-- <div class="tab" onclick="switchTab('tab-turnos', this)">
                         Turnos
                     </div> -->
@@ -637,6 +641,19 @@
         <h3>Meses archivados</h3>
         <p style="font-size:13px;color:#64748b;margin-bottom:1rem;">Aqui podes ver y descargar los meses anteriores que ya archivaste.</p>
         <div id="lista-historial">
+            <div class="loader"><div class="spinner"></div><br>Cargando...</div>
+        </div>
+    </div>
+</div>
+
+<div id="tab-auditoria" style="display: none">
+    <div class="card">
+        <h3>Auditoría de acciones</h3>
+        <p style="font-size:13px;color:#64748b;margin-bottom:1rem;">Aqui se registran todas las acciones importantes realizadas en el sistema. Se muestran las 200 mas recientes.</p>
+        <button class="btn btn-red" onclick="limpiarAuditoria()" style="margin-bottom: 1rem; font-size: 12px; padding: 8px;">
+            🗑️ Limpiar auditoria completa
+        </button>
+        <div id="lista-auditoria">
             <div class="loader"><div class="spinner"></div><br>Cargando...</div>
         </div>
     </div>

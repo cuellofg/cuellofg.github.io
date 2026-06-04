@@ -2,6 +2,24 @@ const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
     const API_KEY = "gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL";
 
+    async function registrarAuditoria(accion, detalle, usuario) {
+    const ahora = new Date();
+    const fecha = ahora.toISOString().slice(0, 10); // YYYY-MM-DD
+    const log = {
+        id: crypto.randomUUID(),
+        fecha: fecha,
+        timestamp: ahora.toISOString(),
+        accion: accion,
+        detalle: detalle,
+        usuario: usuario || 'desconocido'
+    };
+    try {
+        await apiPost(log, 'auditoria');
+    } catch (e) {
+        console.error('Error registrando auditoria:', e);
+    }
+}
+
 async function hashPassword(password) {
     const encoder = new TextEncoder();
     const data = encoder.encode(password.trim());
@@ -406,6 +424,7 @@ async function doAdminLogin() {
     const esConsulta = pass === CONSULTA_PASS;
     if (!esAdmin && !esConsulta) {
         const nuevoCount = bl.count + 1;
+        registrarAuditoria('LOGIN_ADMIN_FALLIDO', 'Intento ' + nuevoCount + '/' + MAX_INTENTOS, 'desconocido');
         const bloqueado = nuevoCount >= MAX_INTENTOS;
         setBloqueo('admin_block', nuevoCount, bloqueado);
         err.textContent = bloqueado
@@ -423,6 +442,8 @@ async function doAdminLogin() {
     document.getElementById('inp-admin-pass').value = '';
     goTo('sc-admin');
     
+    registrarAuditoria(esConsulta ? 'LOGIN_CONSULTA' : 'LOGIN_ADMIN', 'Acceso exitoso', esConsulta ? 'consulta' : 'admin');
+
       modoConsulta = esConsulta;
     const tabs = document.querySelectorAll('.tabs .tab');
     tabs.forEach((tab, i) => {
@@ -474,7 +495,8 @@ function switchTab(id, el) {
         'tab-config',
         'tab-turnos',
         'tab-export',
-        'tab-historial'
+        'tab-historial',
+        'tab-auditoria'
     ].forEach((t) => {
         document.getElementById(t).style.display = t === id ? 'block' : 'none';
     });
@@ -484,6 +506,7 @@ function switchTab(id, el) {
     if (id === 'tab-config') renderConfig();
     if (id === 'tab-turnos') renderTurnos();
     if (id === 'tab-historial') renderHistorial();
+    if (id === 'tab-auditoria') renderAuditoria();
 }
 
 function renderAll() {
@@ -613,6 +636,7 @@ async function agregarPersona() {
     const passHash = await hashPassword(pass);
     await apiPost({ id, grado, lp, nombre, pass: passHash, orden }, 'personal');
     personal.push({ id, grado, lp, nombre, pass: passHash, orden });
+    registrarAuditoria('PERSONAL_CREAR', 'Agregar: ' + nombre + ' (LP: ' + lp + ')', 'admin');
     ['inp-grado', 'inp-lp', 'inp-nombre', 'inp-new-pass'].forEach(
         (i) => (document.getElementById(i).value = ''),
     );
@@ -646,6 +670,7 @@ async function editarPersona(i) {
         pass: passFinal,
     };
     await apiPost({ ...personal[i] }, 'personal');
+    registrarAuditoria('PERSONAL_EDITAR', 'Editado: ' + p.nombre + (nuevoPass.trim() ? ' (con cambio de pass)' : ''), 'admin');
     renderPersonal();
     renderPlanilla();
 }
@@ -665,6 +690,7 @@ async function moverPersona(i, dir) {
 async function eliminarPersona(i) {
     if (!confirm('Quitar a ' + personal[i].nombre + '?')) return;
     await apiDelete({ id: personal[i].id }, 'personal');
+    registrarAuditoria('PERSONAL_ELIMINAR', 'Eliminado: ' + personal[i].nombre, 'admin');
     personal.splice(i, 1);
     renderPersonal();
     renderPlanilla();
@@ -701,6 +727,7 @@ async function aplicarRangoAdmin() {
             mes: cfg.mes,
         });
     }
+    await registrarAuditoria('RANGO_APLICAR', persona + ' - dias ' + desde + ' al ' + hasta + ' → ' + tipo, 'admin');
     alert(
         'Aplicado: ' +
             persona +
@@ -738,6 +765,7 @@ async function editarCelda() {
             },
             'registro',
         );
+        registrarAuditoria('CELDA_BORRAR', persona + ' - dia ' + dia, 'admin');
         alert('Registro borrado.');
         renderPlanilla();
         return;
@@ -751,6 +779,7 @@ async function editarCelda() {
         tipo,
         mes: cfg.mes,
     });
+    registrarAuditoria('CELDA_EDITAR', persona + ' - dia ' + dia + ' → ' + tipo, 'admin');
     alert('Celda actualizada.');
     renderPlanilla();
 }
@@ -953,6 +982,7 @@ async function reiniciarMes() {
     };
     await apiPost(mesArchivo, 'archivo');
     await apiPost({}, 'limpiar');
+    await registrarAuditoria('MES_ARCHIVAR', 'Mes archivado: ' + cfg.mes + ' (' + personal.length + ' personas)', 'admin');
     registros = {};
     alert('Mes archivado y reiniciado correctamente.');
     renderPlanilla();
@@ -1164,6 +1194,7 @@ function cambiarPassAdmin(){
   if(nueva.trim()!==confirmar.trim()){alert('Las contraseñas no coinciden.');return;}
   localStorage.setItem('admin_pass',nueva.trim());
   alert('Contraseña cambiada correctamente.');
+  await registrarAuditoria('PASS_ADMIN_CAMBIAR', 'Contraseña de administrador modificada', 'admin');
 }
 
 async function moverPersonaEnTurno(turnoIdx, personaIdx, dir) {
@@ -1249,6 +1280,7 @@ async function eliminarHistorial(i) {
     const archivo = archivosCache[i];
     if (!confirm('Eliminar permanentemente el archivo de "' + archivo.mes + '"? Esta accion no se puede deshacer.')) return;
     await apiDelete({ id: archivo.id, mes: archivo.mes }, 'archivo');
+    await registrarAuditoria('HISTORIAL_ELIMINAR', 'Eliminado mes archivado: ' + archivo.mes, 'admin');
     archivosCache.splice(i, 1);
     renderHistorial();
 }
@@ -1276,8 +1308,68 @@ async function migrarPasswordsAHash() {
     
     btn.textContent = '🔒 Migrar contraseñas a cifrado (ejecutar una sola vez)';
     btn.disabled = false;
+    await registrarAuditoria('HASH_MIGRAR', cifradas + ' contraseñas cifradas, ' + yaCifradas + ' ya estaban cifradas', 'admin');
     alert('Listo!\n\n' + cifradas + ' contraseñas cifradas.\n' + yaCifradas + ' ya estaban cifradas.');
     renderPersonal();
+}
+
+let auditoriaCache = [];
+
+async function cargarAuditoria() {
+    const data = await apiGet('auditoria');
+    auditoriaCache = data.filter(d => d.timestamp);
+    auditoriaCache.sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp));
+}
+
+async function renderAuditoria() {
+    const c = document.getElementById('lista-auditoria');
+    c.innerHTML = '<div class="loader"><div class="spinner"></div><br>Cargando...</div>';
+    await cargarAuditoria();
+    if (!auditoriaCache.length) {
+        c.innerHTML = '<p style="font-size:13px;color:#64748b;">No hay registros de auditoria.</p>';
+        return;
+    }
+    
+    const colores = {
+        'LOGIN_ADMIN': '#10b981',
+        'LOGIN_CONSULTA': '#3b82f6',
+        'LOGIN_ADMIN_FALLIDO': '#ef4444',
+        'PERSONAL_CREAR': '#10b981',
+        'PERSONAL_EDITAR': '#f59e0b',
+        'PERSONAL_ELIMINAR': '#ef4444',
+        'CELDA_EDITAR': '#3b82f6',
+        'CELDA_BORRAR': '#ef4444',
+        'RANGO_APLICAR': '#8b5cf6',
+        'MES_ARCHIVAR': '#f59e0b',
+        'HISTORIAL_ELIMINAR': '#ef4444',
+        'PASS_ADMIN_CAMBIAR': '#f59e0b',
+        'HASH_MIGRAR': '#10b981'
+    };
+    
+    c.innerHTML = auditoriaCache.slice(0, 200).map(log => {
+        const fecha = new Date(log.timestamp).toLocaleString('es-AR');
+        const color = colores[log.accion] || '#64748b';
+        return '<div style="padding:10px 0;border-bottom:1px solid #f1f5f9;">' +
+            '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px;">' +
+            '<span style="font-size:12px;font-weight:600;color:' + color + ';">' + log.accion + '</span>' +
+            '<span style="font-size:11px;color:#64748b;">' + fecha + '</span>' +
+            '</div>' +
+            '<div style="font-size:13px;color:#1a1a2e;">' + log.detalle + '</div>' +
+            '<div style="font-size:10px;color:#94a3b8;margin-top:2px;">por: ' + log.usuario + '</div>' +
+            '</div>';
+    }).join('');
+}
+
+async function limpiarAuditoria() {
+    if (!confirm('Eliminar TODOS los registros de auditoria? Esta accion no se puede deshacer.')) return;
+    if (!confirm('Estas seguro? Vas a perder el historial completo de acciones.')) return;
+    
+    for (const log of auditoriaCache) {
+        await apiDelete({ id: log.id, fecha: log.fecha }, 'auditoria');
+    }
+    auditoriaCache = [];
+    renderAuditoria();
+    alert('Auditoria limpiada.');
 }
 
 goTo('sc-home');
