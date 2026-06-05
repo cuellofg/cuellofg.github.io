@@ -134,8 +134,8 @@
                         <br />Cargando personal...
                     </div>
                     <div id="login-form" style="display: none">
-                        <label>Tu nombre</label>
-                        <select id="sel-nombre"></select>
+                        <label>Tu usuario</label>
+                        <input type="text" id="inp-usuario-login" placeholder="Tu usuario" autocomplete="off" />
                         <label>Tu contraseña</label>
                         <div style="position: relative; margin-bottom: 0.65rem">
                             <input
@@ -395,6 +395,13 @@
                             id="inp-nombre"
                             placeholder="Ej: Garcia, Juan"
                         />
+                        <label>Usuario (min. 3 caracteres, sin espacios)</label>
+                        <input
+                            type="text"
+                            id="inp-usuario"
+                            placeholder="Ej: garcia.juan"
+                            autocomplete="off"
+                        />
                         <label>Contraseña (min. 4 caracteres)</label>
                         <input
                             type="text"
@@ -411,6 +418,9 @@
                     </div>
                     <div class="card">
                         <h3>Personal registrado</h3>
+                        <button class="btn btn-blue" onclick="migrarUsuariosAutomaticos()" style="margin-bottom: 0.5rem; font-size: 12px; padding: 8px;">
+    👤 Migrar usuarios automáticos (ejecutar una sola vez)
+</button>
                         <button class="btn btn-amber" onclick="migrarPasswordsAHash()" style="margin-bottom: 1rem; font-size: 12px; padding: 8px;">
     🔒 Migrar contraseñas a cifrado (ejecutar una sola vez)
 </button>

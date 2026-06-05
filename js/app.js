@@ -196,7 +196,6 @@ async function iniciarLogin() {
     document.getElementById('login-form').style.display = 'none';
     await cargarConfig();
     await cargarPersonal();
-    llenarNombresLogin();
     document.getElementById('login-loader').style.display = 'none';
     document.getElementById('login-form').style.display = 'block';
 }
@@ -278,11 +277,11 @@ async function doLogin() {
         return;
     }
 
-    const idx = document.getElementById('sel-nombre').value;
+    const usuario = document.getElementById('inp-usuario-login').value.trim().toLowerCase();
     const pass = document.getElementById('inp-pass').value;
     const err = document.getElementById('login-err');
-    if (idx === '') {
-        err.textContent = 'Selecciona tu nombre.';
+    if (!usuario) {
+        err.textContent = 'Ingresa tu usuario.';
         err.style.display = 'block';
         return;
     }
@@ -291,7 +290,17 @@ async function doLogin() {
         err.style.display = 'block';
         return;
     }
-    const p = personal[idx];
+    const p = personal.find((per) => per.usuario === usuario);
+    if (!p) {
+        const nuevoCount = bl.count + 1;
+        const bloqueado = nuevoCount >= MAX_INTENTOS;
+        setBloqueo('login_block', nuevoCount, bloqueado);
+        err.textContent = bloqueado
+            ? 'Cuenta bloqueada por ' + BLOQUEO_MINUTOS + ' minutos.'
+            : 'Usuario o contraseña incorrectos. Intento ' + nuevoCount + '/' + MAX_INTENTOS + '.';
+        err.style.display = 'block';
+        return;
+    }
     const passHash = await hashPassword(pass);
     if (p.pass !== passHash) {
         const nuevoCount = bl.count + 1;
@@ -299,18 +308,15 @@ async function doLogin() {
         setBloqueo('login_block', nuevoCount, bloqueado);
         err.textContent = bloqueado
             ? 'Cuenta bloqueada por ' + BLOQUEO_MINUTOS + ' minutos.'
-            : 'Contraseña incorrecta. Intento ' +
-              nuevoCount +
-              '/' +
-              MAX_INTENTOS +
-              '.';
+            : 'Usuario o contraseña incorrectos. Intento ' + nuevoCount + '/' + MAX_INTENTOS + '.';
         err.style.display = 'block';
         return;
     }
     localStorage.removeItem('login_block');
     err.style.display = 'none';
+    document.getElementById('inp-usuario-login').value = '';
     document.getElementById('inp-pass').value = '';
-    usuarioActual = { idx: parseInt(idx), ...p };
+    usuarioActual = { ...p };
     const dia = new Date().getDate();
     const yaReg = registros[p.nombre] && registros[p.nombre][dia];
     document.getElementById('reg-title').textContent =
@@ -588,6 +594,9 @@ function renderPersonal() {
                 ' · L.P.: ' +
                 p.lp +
                 '</div>' +
+                '<div style="font-size:11px;color:#3b82f6;margin-top:2px;">👤 Usuario: <strong translate="no">' +
+                (p.usuario || 'sin asignar') +
+                '</strong></div>' +
                 '<div style="font-size:11px;margin-top:2px;color:#10b981;">🔒 Contraseña cifrada</div>' +
                 '</div>' +
                 '<div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">' +
@@ -618,9 +627,18 @@ async function agregarPersona() {
     const grado = sanitize(document.getElementById('inp-grado').value);
     const lp = sanitize(document.getElementById('inp-lp').value);
     const nombre = sanitize(document.getElementById('inp-nombre').value);
+    const usuario = sanitize(document.getElementById('inp-usuario').value).toLowerCase();
     const pass = sanitize(document.getElementById('inp-new-pass').value);
-    if (!grado || !lp || !nombre || !pass) {
+    if (!grado || !lp || !nombre || !usuario || !pass) {
         alert('Completa todos los campos.');
+        return;
+    }
+    if (usuario.length < 3) {
+        alert('El usuario debe tener al menos 3 caracteres.');
+        return;
+    }
+    if (!/^[a-z0-9._]+$/.test(usuario)) {
+        alert('El usuario solo puede tener letras minúsculas, numeros, puntos y guiones bajos.');
         return;
     }
     if (pass.length < 4) {
@@ -631,15 +649,19 @@ async function agregarPersona() {
         alert('Ya existe esa persona.');
         return;
     }
+    if (personal.find((p) => p.usuario === usuario)) {
+        alert('Ese usuario ya existe. Elegí otro.');
+        return;
+    }
     const id = nombre.replace(/[^a-zA-Z0-9]/g, '_');
     const orden = personal.length;
     const passHash = await hashPassword(pass);
-    await apiPost({ id, grado, lp, nombre, pass: passHash, orden }, 'personal');
-    personal.push({ id, grado, lp, nombre, pass: passHash, orden });
-    registrarAuditoria('PERSONAL_CREAR', 'Agregar: ' + nombre + ' (LP: ' + lp + ')', 'admin');
-    ['inp-grado', 'inp-lp', 'inp-nombre', 'inp-new-pass'].forEach(
+    await apiPost({ id, grado, lp, nombre, usuario, pass: passHash, orden }, 'personal');
+    personal.push({ id, grado, lp, nombre, usuario, pass: passHash, orden });
+    ['inp-grado', 'inp-lp', 'inp-nombre', 'inp-usuario', 'inp-new-pass'].forEach(
         (i) => (document.getElementById(i).value = ''),
     );
+    registrarAuditoria('PERSONAL_CREAR', 'Agregar: ' + nombre + ' (LP: ' + lp + ', usuario: ' + usuario + ')', 'admin');
     renderPersonal();
     renderPlanilla();
     llenarPersonas('rango-persona');
@@ -650,10 +672,29 @@ async function editarPersona(i) {
     const p = personal[i];
     const nuevoNombre = prompt('Apellido y Nombre (actual: ' + p.nombre + '):', p.nombre);
     if (nuevoNombre === null) return;
+    const nuevoUsuario = prompt('Usuario (actual: ' + (p.usuario || 'sin usuario') + '):', p.usuario || '');
+    if (nuevoUsuario === null) return;
     const nuevoPass = prompt('Nueva contraseña (dejar vacío para no cambiar):', '');
     if (nuevoPass === null) return;
     if (!nuevoNombre.trim()) {
         alert('El nombre no puede estar vacío.');
+        return;
+    }
+    const usuarioFinal = nuevoUsuario.trim().toLowerCase();
+    if (!usuarioFinal) {
+        alert('El usuario no puede estar vacío.');
+        return;
+    }
+    if (usuarioFinal.length < 3) {
+        alert('El usuario debe tener al menos 3 caracteres.');
+        return;
+    }
+    if (!/^[a-z0-9._]+$/.test(usuarioFinal)) {
+        alert('El usuario solo puede tener letras minúsculas, numeros, puntos y guiones bajos.');
+        return;
+    }
+    if (personal.find((per, idx) => per.usuario === usuarioFinal && idx !== i)) {
+        alert('Ese usuario ya está en uso por otra persona.');
         return;
     }
     let passFinal = personal[i].pass;
@@ -667,14 +708,14 @@ async function editarPersona(i) {
     personal[i] = {
         ...personal[i],
         nombre: sanitize(nuevoNombre),
+        usuario: usuarioFinal,
         pass: passFinal,
     };
     await apiPost({ ...personal[i] }, 'personal');
-    registrarAuditoria('PERSONAL_EDITAR', 'Editado: ' + p.nombre + (nuevoPass.trim() ? ' (con cambio de pass)' : ''), 'admin');
+    registrarAuditoria('PERSONAL_EDITAR', 'Editado: ' + p.nombre + ' (usuario: ' + usuarioFinal + (nuevoPass.trim() ? ', con cambio de pass' : '') + ')', 'admin');
     renderPersonal();
     renderPlanilla();
 }
-
 async function moverPersona(i, dir) {
     const j = i + dir;
     if (j < 0 || j >= personal.length) return;
@@ -1283,6 +1324,64 @@ async function eliminarHistorial(i) {
     await registrarAuditoria('HISTORIAL_ELIMINAR', 'Eliminado mes archivado: ' + archivo.mes, 'admin');
     archivosCache.splice(i, 1);
     renderHistorial();
+}
+
+async function migrarUsuariosAutomaticos() {
+    if (!confirm('Esto va a asignar usuarios automáticos. Formato: 1 letra de cada nombre + apellido (ej: jlrodriguez).\n\nLos que ya tienen usuario NO se tocan.\n\n¿Continuar?')) return;
+    
+    const btn = document.querySelector('[onclick="migrarUsuariosAutomaticos()"]');
+    btn.textContent = 'Asignando...';
+    btn.disabled = true;
+    
+    let asignados = 0;
+    let yaTenian = 0;
+    const usuariosUsados = personal.filter(p => p.usuario).map(p => p.usuario);
+    
+    for (const p of personal) {
+        if (p.usuario) {
+            yaTenian++;
+            continue;
+        }
+        // Generar usuario automatico
+        const partes = p.nombre.split(',').map(s => s.trim());
+        let apellido = partes[0] || '';
+        let nombres = (partes[1] || '').split(' ').filter(n => n.length > 0);
+        
+        // Limpiar apellido (sin acentos, sin espacios, minusculas)
+        apellido = apellido.toLowerCase()
+            .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+            .replace(/[^a-z0-9]/g, '');
+        
+        // Tomar primera letra de cada nombre
+        let iniciales = '';
+        for (const nombre of nombres) {
+            const limpio = nombre.toLowerCase()
+                .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+                .replace(/[^a-z0-9]/g, '');
+            if (limpio) iniciales += limpio.charAt(0);
+        }
+        
+        let usuarioBase = iniciales + apellido;
+        let usuarioFinal = usuarioBase;
+        let contador = 1;
+        
+        // Si ya existe, agregar numero
+        while (usuariosUsados.includes(usuarioFinal)) {
+            contador++;
+            usuarioFinal = usuarioBase + contador;
+        }
+        
+        p.usuario = usuarioFinal;
+        usuariosUsados.push(usuarioFinal);
+        await apiPost({ ...p }, 'personal');
+        asignados++;
+    }
+    
+    btn.textContent = '👤 Migrar usuarios automáticos (ejecutar una sola vez)';
+    btn.disabled = false;
+    alert('Listo!\n\n' + asignados + ' usuarios asignados.\n' + yaTenian + ' ya tenían usuario.\n\nPodés editar cada uno desde el listado de personal.');
+    await registrarAuditoria('USUARIOS_MIGRAR', asignados + ' usuarios asignados automáticamente', 'admin');
+    renderPersonal();
 }
 
 async function migrarPasswordsAHash() {
