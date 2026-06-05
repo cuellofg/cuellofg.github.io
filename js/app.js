@@ -1383,3 +1383,20 @@ function keepAliveAzure() {
 }
 setInterval(keepAliveAzure, 4 * 60 * 1000);
 keepAliveAzure();
+
+// Sistema de tema (claro/oscuro)
+function toggleTema() {
+    const esOscuro = document.body.classList.toggle('dark');
+    localStorage.setItem('tema', esOscuro ? 'dark' : 'light');
+    document.getElementById('theme-toggle-btn').textContent = esOscuro ? '☀️' : '🌙';
+}
+
+function cargarTema() {
+    const tema = localStorage.getItem('tema') || 'light';
+    if (tema === 'dark') {
+        document.body.classList.add('dark');
+        document.getElementById('theme-toggle-btn').textContent = '☀️';
+    }
+}
+
+cargarTema();

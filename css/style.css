@@ -48,3 +48,87 @@ td.col-fixed{text-align:left;padding-left:8px;background:#f8fafc;font-size:11px;
   .tab{font-size:10px;padding:6px 2px;}
   .planilla-wrap{max-height:55vh;}
 }
+
+/* Modo oscuro */
+body.dark {
+    background: #1e2638;
+    color: #e2e8f0;
+}
+body.dark .card {
+    background: #2a3349;
+    color: #e2e8f0;
+    border-color: #334155;
+}
+body.dark h2, body.dark h3 {
+    color: #f1f5f9;
+}
+body.dark label {
+    color: #cbd5e1;
+}
+body.dark input, body.dark select {
+    background: #3a4358;
+    color: #f1f5f9;
+    border-color: #475569;
+}
+body.dark .tab {
+    background: #3a4358;
+    color: #cbd5e1;
+}
+body.dark .tab.active {
+    background: #3b82f6;
+    color: #fff;
+}
+body.dark .alert-ok {
+    background: #064e3b;
+    color: #6ee7b7;
+}
+body.dark .row-between {
+    border-color: #334155;
+}
+body.dark .back {
+    color: #cbd5e1;
+}
+/* La planilla mantiene fondo claro siempre */
+body.dark .planilla-wrap,
+body.dark .planilla-wrap table,
+body.dark .planilla-wrap th,
+body.dark .planilla-wrap td {
+    background: #fff !important;
+    color: #1a1a2e !important;
+}
+body.dark .planilla-wrap th {
+    background: #f8fafc !important;
+}
+
+/* Botón flotante de modo oscuro */
+.theme-toggle {
+    position: fixed;
+    top: 12px;
+    right: 12px;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: #1e293b;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    font-size: 18px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    transition: all 0.2s;
+}
+.theme-toggle:hover {
+    transform: scale(1.1);
+}
+body.dark .theme-toggle {
+    background: #fbbf24;
+    color: #1a1a2e;
+}
+
+body.dark .btn[style*="border: 1px solid #0F2A47"] {
+    color: #e2e8f0 !important;
+    border-color: #e2e8f0 !important;
+}
