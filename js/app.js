@@ -28,7 +28,8 @@ async function hashPassword(password) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const ADMIN_PASS_HASH = localStorage.getItem('admin_pass_hash') || '059a50ce956b7ec61527c7ecc0c55b5a009dc54ab4acddce8852b46baa2aba30';
+const ADMIN_PASS_HASH_DEFAULT = '059a50ce956b7ec61527c7ecc0c55b5a009dc54ab4acddce8852b46baa2aba30';
+let ADMIN_PASS_HASH_GLOBAL = ADMIN_PASS_HASH_DEFAULT;
 const CONSULTA_PASS_HASH = '8123c283e4d6fb72777fa21f3442fb90eb9f2d5c894c8802e6e280af8e297436';
 let modoConsulta=false;
 const DIAS_SEM = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
@@ -154,6 +155,12 @@ async function cargarConfig() {
     if (cfgAzure && cfgAzure.dias) cfg.dias = cfgAzure.dias;
     if (cfgAzure && cfgAzure.inicioSem !== undefined)
         cfg.inicioSem = cfgAzure.inicioSem;
+    
+    // Cargar hash de pass admin desde Cosmos (global)
+    const adminPassDoc = data.find((d) => d.id === 'admin_pass');
+    if (adminPassDoc && adminPassDoc.hash) {
+        ADMIN_PASS_HASH_GLOBAL = adminPassDoc.hash;
+    }
 }
 
 async function cargarRegistros() {
@@ -426,8 +433,9 @@ async function doAdminLogin() {
 
    const pass = document.getElementById('inp-admin-pass').value;
     const err = document.getElementById('admin-err');
+    await cargarConfig();
     const passHash = await hashPassword(pass);
-    const esAdmin = passHash === ADMIN_PASS_HASH;
+    const esAdmin = passHash === ADMIN_PASS_HASH_GLOBAL;
     const esConsulta = passHash === CONSULTA_PASS_HASH;
     if (!esAdmin && !esConsulta) {
         const nuevoCount = bl.count + 1;
@@ -1226,9 +1234,9 @@ function renderPlanillaTurno(turno) {
 async function cambiarPassAdmin(){
   const actual=prompt('Ingresa la contraseña actual:','');
   if(actual===null)return;
+  await cargarConfig();
   const actualHash = await hashPassword(actual);
-  const passHashGuardado = localStorage.getItem('admin_pass_hash') || '059a50ce956b7ec61527c7ecc0c55b5a009dc54ab4acddce8852b46baa2aba30';
-  if(actualHash !== passHashGuardado){alert('Contraseña actual incorrecta.');return;}
+  if(actualHash !== ADMIN_PASS_HASH_GLOBAL){alert('Contraseña actual incorrecta.');return;}
   const nueva=prompt('Ingresa la nueva contraseña (min. 6 caracteres):','');
   if(nueva===null)return;
   if(nueva.trim().length<6){alert('La contraseña debe tener al menos 6 caracteres.');return;}
@@ -1236,9 +1244,13 @@ async function cambiarPassAdmin(){
   if(confirmar===null)return;
   if(nueva.trim()!==confirmar.trim()){alert('Las contraseñas no coinciden.');return;}
   const nuevaHash = await hashPassword(nueva.trim());
-  localStorage.setItem('admin_pass_hash', nuevaHash);
-  alert('Contraseña cambiada correctamente.');
-  await registrarAuditoria('PASS_ADMIN_CAMBIAR', 'Contraseña de administrador modificada', 'admin');
+  
+  // Guardar en Cosmos DB (global - todos los dispositivos)
+  await apiPost({ id: 'admin_pass', hash: nuevaHash }, 'config');
+  ADMIN_PASS_HASH_GLOBAL = nuevaHash;
+  
+  alert('Contraseña cambiada correctamente en todos los dispositivos.');
+  await registrarAuditoria('PASS_ADMIN_CAMBIAR', 'Contraseña de administrador modificada (global)', 'admin');
 }
 
 async function moverPersonaEnTurno(turnoIdx, personaIdx, dir) {
