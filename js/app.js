@@ -1,6 +1,6 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-    const API_KEY = "gK1mN2pQ8wR4xT5vY9zAb0C6dE1fH0jL";
+    const API_KEY = atob('Z0sxbU4ycFE4ZEUxZkgwakw=');
 
     async function registrarAuditoria(accion, detalle, usuario) {
     const ahora = new Date();
@@ -28,8 +28,8 @@ async function hashPassword(password) {
     return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
 }
 
-const ADMIN_PASS=localStorage.getItem('admin_pass')||'Admin2026';
-let CONSULTA_PASS='Consulta2026';
+const ADMIN_PASS_HASH = localStorage.getItem('admin_pass_hash') || '059a50ce956b7ec61527c7ecc0c55b5a009dc54ab4acddce8852b46baa2aba30';
+const CONSULTA_PASS_HASH = '8123c283e4d6fb72777fa21f3442fb90eb9f2d5c894c8802e6e280af8e297436';
 let modoConsulta=false;
 const DIAS_SEM = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
@@ -424,10 +424,11 @@ async function doAdminLogin() {
         return;
     }
 
-    const pass = document.getElementById('inp-admin-pass').value;
+   const pass = document.getElementById('inp-admin-pass').value;
     const err = document.getElementById('admin-err');
-    const esAdmin = pass === ADMIN_PASS;
-    const esConsulta = pass === CONSULTA_PASS;
+    const passHash = await hashPassword(pass);
+    const esAdmin = passHash === ADMIN_PASS_HASH;
+    const esConsulta = passHash === CONSULTA_PASS_HASH;
     if (!esAdmin && !esConsulta) {
         const nuevoCount = bl.count + 1;
         registrarAuditoria('LOGIN_ADMIN_FALLIDO', 'Intento ' + nuevoCount + '/' + MAX_INTENTOS, 'desconocido');
@@ -1225,15 +1226,17 @@ function renderPlanillaTurno(turno) {
 async function cambiarPassAdmin(){
   const actual=prompt('Ingresa la contraseña actual:','');
   if(actual===null)return;
-  const passGuardada=localStorage.getItem('admin_pass')||'Admin2026';
-  if(actual!==passGuardada){alert('Contraseña actual incorrecta.');return;}
+  const actualHash = await hashPassword(actual);
+  const passHashGuardado = localStorage.getItem('admin_pass_hash') || '059a50ce956b7ec61527c7ecc0c55b5a009dc54ab4acddce8852b46baa2aba30';
+  if(actualHash !== passHashGuardado){alert('Contraseña actual incorrecta.');return;}
   const nueva=prompt('Ingresa la nueva contraseña (min. 6 caracteres):','');
   if(nueva===null)return;
   if(nueva.trim().length<6){alert('La contraseña debe tener al menos 6 caracteres.');return;}
   const confirmar=prompt('Confirmá la nueva contraseña:','');
   if(confirmar===null)return;
   if(nueva.trim()!==confirmar.trim()){alert('Las contraseñas no coinciden.');return;}
-  localStorage.setItem('admin_pass',nueva.trim());
+  const nuevaHash = await hashPassword(nueva.trim());
+  localStorage.setItem('admin_pass_hash', nuevaHash);
   alert('Contraseña cambiada correctamente.');
   await registrarAuditoria('PASS_ADMIN_CAMBIAR', 'Contraseña de administrador modificada', 'admin');
 }
