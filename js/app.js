@@ -1,6 +1,6 @@
 const API_URL =
     'https://guardias-api-dzatbfhae4hyhpeq.centralus-01.azurewebsites.net/api/guardias-api';
-    const API_KEY = atob('Z0sxbU4ycFE4ZEUxZkgwakw=');
+    const API_KEY = atob('Z0sxbU4ycFE4d1I0eFQ1dlk5ekFiMEM2ZEUxZkgwakw=');
 
     async function registrarAuditoria(accion, detalle, usuario) {
     const ahora = new Date();
