@@ -347,9 +347,9 @@
                         Exportar
                     </div>
 
-                    <div class="tab" onclick="switchTab('tab-historial', this)">
-                        Historial
-                    </div>
+                    <!-- <div class="tab" onclick="switchTab('tab-historial', this)">
+                            Historial
+                        </div> -->
 
                     <div class="tab" onclick="switchTab('tab-auditoria', this)">
                         Auditoría
@@ -647,7 +647,7 @@
                     </div>
                 </div>
 
-                <div id="tab-historial" style="display: none">
+                <!-- <div id="tab-historial" style="display: none">
     <div class="card">
         <h3>Meses archivados</h3>
         <p style="font-size:13px;color:#64748b;margin-bottom:1rem;">Aqui podes ver y descargar los meses anteriores que ya archivaste.</p>
@@ -655,7 +655,7 @@
             <div class="loader"><div class="spinner"></div><br>Cargando...</div>
         </div>
     </div>
-</div>
+</div> -->
 
 <div id="tab-auditoria" style="display: none">
     <div class="card">
@@ -686,21 +686,22 @@
                         <button class="btn btn-blue" onclick="exportarCSV()">
                             Descargar planilla en Excel
                         </button>
-                    </div>
-                    <div class="card">
-                        <p
-                            style="
-                                font-size: 13px;
-                                color: #64748b;
-                                margin-bottom: 1rem;
-                                line-height: 1.5;
-                            "
+                        </div>
+                         <div class="card">
+                                    <p
+                                    style="
+                                    font-size: 13px;
+                                    color: #64748b;
+                                    margin-bottom: 1rem;
+                                    line-height: 1.5;
+                               "
                         >
-                            Archiva el mes actual y reinicia los registros. El
-                            personal no se borra.
+                            Reinicia los registros del mes. El personal NO se borra.
+                            <br><br>
+                            <strong>Importante:</strong> Asegurate de haber descargado el Excel antes.
                         </p>
                         <button class="btn btn-red" onclick="reiniciarMes()">
-                            Archivar y reiniciar mes
+                            Reiniciar mes
                         </button>
                     </div>
                 </div>

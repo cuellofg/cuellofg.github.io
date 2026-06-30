@@ -1013,28 +1013,29 @@ function exportarCSV() {
 async function reiniciarMes() {
     if (
         !confirm(
-            'Archivar el mes "' +
+            'Reiniciar los registros del mes "' +
                 cfg.mes +
-                '" y reiniciar los registros? El personal no se borra.',
+                '"?\n\nEl personal NO se borra, solo los registros de asistencia.\n\nIMPORTANTE: Asegurate de haber descargado el Excel antes de continuar.',
         )
     )
         return;
-    const mesArchivo = {
-        id: cfg.mes.replace(/ /g, '_') + '_' + Date.now(),
-        mes: cfg.mes,
-        fecha: new Date().toISOString(),
-        registros: registros,
-        personal: personal.map((p) => ({
-            nombre: p.nombre,
-            grado: p.grado,
-            lp: p.lp,
-        })),
-    };
-    await apiPost(mesArchivo, 'archivo');
+    
+    const confirmacion = prompt(
+        'Esta acción es IRREVERSIBLE.\n\nPara confirmar, escribí el nombre del mes exactamente como aparece:\n\n' + cfg.mes,
+        ''
+    );
+    
+    if (confirmacion === null) return;
+    
+    if (confirmacion.trim().toUpperCase() !== cfg.mes.trim().toUpperCase()) {
+        alert('El nombre del mes no coincide. Reinicio cancelado.');
+        return;
+    }
+    
     await apiPost({}, 'limpiar');
-    await registrarAuditoria('MES_ARCHIVAR', 'Mes archivado: ' + cfg.mes + ' (' + personal.length + ' personas)', 'admin');
+    await registrarAuditoria('MES_REINICIAR', 'Mes reiniciado: ' + cfg.mes + ' (' + personal.length + ' personas)', 'admin');
     registros = {};
-    alert('Mes archivado y reiniciado correctamente.');
+    alert('Mes reiniciado correctamente.');
     renderPlanilla();
 }
 
@@ -1271,6 +1272,10 @@ async function quitarPersonaDeTurno(turnoIdx, personaIdx) {
     renderTurnos();
     alert(nombre + ' quitado del turno.');
 }
+
+// === FUNCIONES DE HISTORIAL (PAUSADAS) ===
+// Reactivar cuando se ofrezca archivado en la nube para clientes empresa.
+// Requiere descomentar el tab "Historial" en index.html
 
 let archivosCache = [];
 
