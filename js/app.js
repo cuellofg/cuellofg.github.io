@@ -198,6 +198,15 @@ function goTo(id) {
 }
 
 async function iniciarLogin() {
+
+    // Bloqueo de mantenimiento hasta el 1 de julio
+    const ahora = new Date();
+    const finMantenimiento = new Date('2026-07-01T00:00:00');
+    if (ahora < finMantenimiento) {
+        alert('🛠️ Sistema en mantenimiento\n\nLa carga de asistencia estará disponible a partir del 1 de Julio de 2026.');
+        return;
+    }
+
     goTo('sc-login');
     document.getElementById('login-loader').style.display = 'block';
     document.getElementById('login-form').style.display = 'none';
