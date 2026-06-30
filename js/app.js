@@ -203,7 +203,7 @@ async function iniciarLogin() {
     const ahora = new Date();
     const finMantenimiento = new Date('2026-07-01T00:00:00');
     if (ahora < finMantenimiento) {
-        alert('🛠️ Sistema en mantenimiento\n\nLa carga de asistencia estará disponible a partir del 1 de Julio de 2026.');
+        alert('🛠️ Sistema en mantenimiento\n\nLa carga de asistencia estará disponible a partir del 1 de Julio de 2026.\n\n El presente sera cargado manualmente por Administración');
         return;
     }
 
